@@ -369,14 +369,14 @@ class WerewolfGameOrchestrator:
 
         self._log("\n[MORNING] Announcement:")
 
+        # Collect deaths from night_result instead of comparing agent states
         deaths = []
-        for player in self.game.player_names:
-            if (
-                player not in self.game.state.alive_players
-                and self.agents[player].is_alive
-            ):
-                deaths.append(player)
-                self.agents[player].mark_dead()
+        if night_result.get("night_death"):
+            deaths.append(night_result["night_death"])
+        if night_result.get("poisoned_player"):
+            poisoned_player = night_result["poisoned_player"]
+            if poisoned_player not in deaths:
+                deaths.append(poisoned_player)
 
         if deaths:
             for dead in deaths:

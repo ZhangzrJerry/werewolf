@@ -423,10 +423,10 @@ class TestOrchestratorNightPhase(unittest.TestCase):
             seer_logs = [msg for msg in logged_messages if "David learned" in msg]
             self.assertTrue(len(seer_logs) > 0)
 
-            # Should show "坏人" not "werewolf"
+            # Should show "werewolf" not "坏人"
             seer_log = seer_logs[0]
-            self.assertIn("坏人", seer_log)
-            self.assertNotIn("werewolf", seer_log.lower())
+            self.assertIn("werewolf", seer_log)
+            self.assertNotIn("坏人", seer_log)
         finally:
             shutil.rmtree(temp_dir)
 

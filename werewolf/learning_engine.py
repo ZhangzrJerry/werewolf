@@ -40,8 +40,16 @@ class ReviewAgent:
     ) -> Tuple[Dict[str, str], str, Dict[str, List[str]]]:
         """Return (per_player_reviews, overall_summary, lessons_by_role)"""
         players = ", ".join([f"{p}({roles[p].value})" for p in roles])
-        prompt = f"""
-You are a Werewolf-game analyst. Read the full game transcript and produce:
+
+        # Truncate transcript if too long to avoid token limits
+        max_transcript_length = 8000
+        if len(transcript) > max_transcript_length:
+            transcript = (
+                transcript[:max_transcript_length]
+                + "\n\n[... transcript truncated ...]"
+            )
+
+        prompt = f"""You are a Werewolf-game analyst. Read the full game transcript and produce:
 1) A concise per-player review (5-8 sentences each): decision quality, key mistakes, good moves, and concrete improvement tips.
 2) An overall game summary explaining why the winner won and key turning points (6-10 sentences).
 3) A short list of actionable strategy rules per role (Villager, Werewolf, Seer, Witch, Guardian, Hunter). Each rule must be a single imperative sentence (max 16 words), specific and non-obvious.
@@ -53,8 +61,18 @@ Transcript:
 {transcript}
 ---
 
-Format your output as JSON with fields: {{ "per_player": {{name: text}}, "overall": text, "lessons": {{role: [rules]}} }}
-Do not include markdown.
+CRITICAL INSTRUCTIONS:
+- Return ONLY valid JSON
+- NO markdown code blocks (no ```)
+- NO explanatory text before or after
+- Ensure ALL strings are properly quoted
+- Escape special characters (quotes, newlines) properly
+- Complete the entire JSON object
+
+Expected format:
+{{"per_player": {{"PlayerName": "review text"}}, "overall": "summary text", "lessons": {{"RoleName": ["rule1", "rule2"]}}}}
+
+Start your response with {{ and end with }}
 """
         response = _run_model_sync(
             self.model, [Msg(name="reviewer", content=prompt, role="user")]
@@ -72,14 +90,66 @@ Do not include markdown.
             else:
                 text = str(content)
 
+            # Clean up markdown code blocks if present
+            text = text.strip()
+            if text.startswith("```json"):
+                text = text[7:]
+            if text.startswith("```"):
+                text = text[3:]
+            if text.endswith("```"):
+                text = text[:-3]
+            text = text.strip()
+
+            # Try to find JSON object if text has extra content
+            if not text.startswith("{"):
+                # Look for first { and last }
+                start_idx = text.find("{")
+                end_idx = text.rfind("}")
+                if start_idx != -1 and end_idx != -1:
+                    text = text[start_idx : end_idx + 1]
+
+            # Additional cleanup: fix common JSON issues
+            # Remove any trailing commas before closing braces
+            import re
+
+            text = re.sub(r",\s*}", "}", text)
+            text = re.sub(r",\s*]", "]", text)
+
             # Parse JSON from extracted text
             data = json.loads(text)
-        except Exception as e:
-            # Fallback minimal structure
+        except json.JSONDecodeError as e:
+            # Try to save partial JSON to file for debugging
             print(f"Warning: Failed to parse reviewer response: {e}")
+            print(f"Error position: {e.pos if hasattr(e, 'pos') else 'unknown'}")
+            if "text" in locals():
+                print(f"Raw response (first 500 chars): {text[:500]}...")
+                print(f"Raw response (last 200 chars): ...{text[-200:]}")
+                # Save failed response for debugging
+                try:
+                    import datetime
+
+                    debug_file = f".training/debug_review_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
+                    import os
+
+                    os.makedirs(".training", exist_ok=True)
+                    with open(debug_file, "w", encoding="utf-8") as f:
+                        f.write(f"Error: {e}\n\n")
+                        f.write(f"Full response:\n{text}")
+                    print(f"Saved failed response to {debug_file}")
+                except Exception:
+                    pass
+
+            # Fallback minimal structure
             data = {
                 "per_player": {},
-                "overall": str(text) if "text" in locals() else "",
+                "overall": "Failed to parse review response - please check debug file",
+                "lessons": {},
+            }
+        except Exception as e:
+            print(f"Warning: Unexpected error in reviewer: {e}")
+            data = {
+                "per_player": {},
+                "overall": "Error during review",
                 "lessons": {},
             }
         per_player = {k: str(v) for k, v in data.get("per_player", {}).items()}
@@ -100,8 +170,14 @@ You are a strategy critic for the Werewolf game. You will refine role-based rule
 - Remove duplicates and contradictions.
 - Make each rule specific, imperative, and at most 16 words.
 - Keep 5 or fewer rules per role, prioritized for impact.
-Input (JSON): {json.dumps(lessons_by_role)}
-Output JSON only: {{ role: [rules...] }}
+
+Input lessons:
+{json.dumps(lessons_by_role, indent=2)}
+
+CRITICAL: Return ONLY valid JSON. No markdown, no code blocks, no explanation.
+Format: {{"RoleName": ["rule1", "rule2", "rule3"]}}
+
+Ensure all strings are properly quoted and escaped. Make sure the JSON is complete and valid.
 """
         response = _run_model_sync(
             self.model, [Msg(name="critic", content=prompt, role="user")]
@@ -119,9 +195,39 @@ Output JSON only: {{ role: [rules...] }}
             else:
                 text = str(content)
 
+            # Clean up markdown code blocks if present
+            text = text.strip()
+            if text.startswith("```json"):
+                text = text[7:]
+            if text.startswith("```"):
+                text = text[3:]
+            if text.endswith("```"):
+                text = text[:-3]
+            text = text.strip()
+
+            # Try to find JSON object if text has extra content
+            if not text.startswith("{"):
+                start_idx = text.find("{")
+                end_idx = text.rfind("}")
+                if start_idx != -1 and end_idx != -1:
+                    text = text[start_idx : end_idx + 1]
+
+            # Additional cleanup: fix common JSON issues
+            import re
+
+            text = re.sub(r",\s*}", "}", text)
+            text = re.sub(r",\s*]", "]", text)
+
             # Parse JSON from extracted text
             data = json.loads(text)
             return {k: [str(x) for x in v] for k, v in data.items()}
+        except json.JSONDecodeError as e:
+            print(f"Warning: Failed to parse critic response (JSON error): {e}")
+            print(f"Error position: {e.pos if hasattr(e, 'pos') else 'unknown'}")
+            if "text" in locals():
+                print(f"Raw response (first 500 chars): {text[:500]}...")
+            # Return original lessons if parsing fails
+            return lessons_by_role
         except Exception as e:
             print(f"Warning: Failed to parse critic response: {e}")
             return lessons_by_role
@@ -223,10 +329,30 @@ def run_learning_pipeline(
             os.path.join(review_dir, f"{player}_review.txt"), "w", encoding="utf-8"
         ) as f:
             f.write(text)
+
+    # Save overall as plain text
     with open(os.path.join(review_dir, "overall.txt"), "w", encoding="utf-8") as f:
         f.write(overall)
+
+    # Save lessons as proper JSON
     with open(os.path.join(review_dir, "lessons.json"), "w", encoding="utf-8") as f:
         json.dump(refined_lessons, f, ensure_ascii=False, indent=2)
+
+    # Also save raw data for debugging
+    with open(
+        os.path.join(review_dir, "full_analysis.json"), "w", encoding="utf-8"
+    ) as f:
+        json.dump(
+            {
+                "per_player": per_player,
+                "overall": overall,
+                "lessons": refined_lessons,
+                "winner": winner,
+            },
+            f,
+            ensure_ascii=False,
+            indent=2,
+        )
 
     # Persist strategies by role
     sm = StrategyManager()

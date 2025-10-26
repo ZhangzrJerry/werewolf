@@ -115,27 +115,27 @@ class TestRoleTeamDetection(unittest.TestCase):
 
     def test_werewolf_team(self):
         """Test that werewolf returns bad team"""
-        self.assertEqual(Role.WEREWOLF.get_team(), "坏人")
+        self.assertEqual(Role.WEREWOLF.get_team(), "werewolf")
 
     def test_villager_team(self):
         """Test that villager returns good team"""
-        self.assertEqual(Role.VILLAGER.get_team(), "好人")
+        self.assertEqual(Role.VILLAGER.get_team(), "good")
 
     def test_seer_team(self):
         """Test that seer returns good team"""
-        self.assertEqual(Role.SEER.get_team(), "好人")
+        self.assertEqual(Role.SEER.get_team(), "good")
 
     def test_witch_team(self):
         """Test that witch returns good team"""
-        self.assertEqual(Role.WITCH.get_team(), "好人")
+        self.assertEqual(Role.WITCH.get_team(), "good")
 
     def test_hunter_team(self):
         """Test that hunter returns good team"""
-        self.assertEqual(Role.HUNTER.get_team(), "好人")
+        self.assertEqual(Role.HUNTER.get_team(), "good")
 
     def test_guardian_team(self):
         """Test that guardian returns good team"""
-        self.assertEqual(Role.GUARDIAN.get_team(), "好人")
+        self.assertEqual(Role.GUARDIAN.get_team(), "good")
 
 
 class TestNightPhase(unittest.TestCase):
