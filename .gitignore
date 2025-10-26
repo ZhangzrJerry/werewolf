@@ -1,1 +1,30 @@
-env/*
+# Virtual environments
+env/
+venv/
+.venv/
+ENV/
+
+# Byte-compiled / optimized / DLL files
+*.pyc
+*.pyo
+*.pyd
+__pycache__/
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.pytest_cache/
+.coverage
+
+# Editor and IDE settings
+.vscode/
+.idea/
+
+# Misc
+*.log
+.env
