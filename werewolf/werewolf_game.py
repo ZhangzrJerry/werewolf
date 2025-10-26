@@ -256,8 +256,6 @@ class WerewolfGame:
         # Werewolf attack
         victim = self._process_werewolf_action(agent_actions)
         night_result["werewolf_target"] = victim
-        for w in self._get_players_with_role(Role.WEREWOLF):
-            w.record_kill_result(victim)
 
         # Seer
         seer_checks = self._process_seer_action(agent_actions)

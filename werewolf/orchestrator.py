@@ -266,6 +266,29 @@ class WerewolfGameOrchestrator:
         if any(w.role == Role.WITCH and w.is_alive for w in self.agents.values()):
             night_result = self.game.execute_night_phase(agent_actions)
 
+        # Record kill result for werewolves
+        victim = night_result.get("werewolf_target")
+        if victim:
+            # Determine if kill was successful
+            final_death = night_result.get("night_death")
+            saved = night_result.get("saved")
+            guarded = night_result.get("guardian", {}).get("guarded")
+
+            result = (
+                "killed"
+                if final_death == victim
+                else (
+                    "saved by witch"
+                    if saved == victim
+                    else ("protected by guardian" if guarded == victim else "unknown")
+                )
+            )
+
+            # Update all werewolf agents
+            for agent_name, agent in self.agents.items():
+                if agent.role == Role.WEREWOLF and hasattr(agent, "record_kill_result"):
+                    agent.record_kill_result(victim, result)
+
         # Update agent states
         self._update_agents_after_night(night_result)
 

@@ -31,6 +31,51 @@ except Exception:  # pragma: no cover
 from .agents import _run_model_sync
 
 
+def _extract_and_fix_json(text: str) -> str:
+    """Extract and attempt to fix malformed JSON from LLM response"""
+    import re
+
+    # Clean up markdown code blocks if present
+    text = text.strip()
+    if text.startswith("```json"):
+        text = text[7:]
+    if text.startswith("```"):
+        text = text[3:]
+    if text.endswith("```"):
+        text = text[:-3]
+    text = text.strip()
+
+    # Try to find JSON object if text has extra content
+    if not text.startswith("{"):
+        start_idx = text.find("{")
+        end_idx = text.rfind("}")
+        if start_idx != -1 and end_idx != -1:
+            text = text[start_idx : end_idx + 1]
+
+    # Fix common JSON issues
+    # Remove trailing commas before closing braces/brackets
+    text = re.sub(r",\s*}", "}", text)
+    text = re.sub(r",\s*]", "]", text)
+
+    # Try to fix unterminated strings by looking for unescaped quotes
+    # This is a simple heuristic - won't catch all cases
+    lines = text.split("\n")
+    fixed_lines = []
+    for line in lines:
+        # If line contains an odd number of unescaped quotes, it's likely malformed
+        # Count quotes that aren't escaped
+        quote_count = len(re.findall(r'(?<!\\)"', line))
+        if quote_count % 2 == 1 and not line.strip().endswith(","):
+            # Try to close the string if it looks incomplete
+            if ":" in line and '"' in line:
+                # This is a crude fix - just escape internal quotes
+                # Better: use proper JSON repair library
+                pass
+        fixed_lines.append(line)
+
+    return text
+
+
 class ReviewAgent:
     def __init__(self, model):
         self.model = model
@@ -50,9 +95,9 @@ class ReviewAgent:
             )
 
         prompt = f"""You are a Werewolf-game analyst. Read the full game transcript and produce:
-1) A concise per-player review (5-8 sentences each): decision quality, key mistakes, good moves, and concrete improvement tips.
-2) An overall game summary explaining why the winner won and key turning points (6-10 sentences).
-3) A short list of actionable strategy rules per role (Villager, Werewolf, Seer, Witch, Guardian, Hunter). Each rule must be a single imperative sentence (max 16 words), specific and non-obvious.
+1) A concise per-player review (3-4 sentences max, under 150 chars each): decision quality, key mistakes, and ONE improvement tip.
+2) An overall game summary explaining why the winner won (4-5 sentences max, under 300 chars).
+3) A short list of 2-3 actionable strategy rules per role (Villager, Werewolf, Seer, Witch, Guardian, Hunter). Each rule must be under 12 words.
 
 Winner: {winner}
 Players and roles: {players}
@@ -61,17 +106,19 @@ Transcript:
 {transcript}
 ---
 
-CRITICAL INSTRUCTIONS:
-- Return ONLY valid JSON
+CRITICAL JSON FORMATTING RULES - FOLLOW EXACTLY:
+- Return ONLY valid JSON, nothing else
 - NO markdown code blocks (no ```)
-- NO explanatory text before or after
-- Ensure ALL strings are properly quoted
-- Escape special characters (quotes, newlines) properly
-- Complete the entire JSON object
+- ALL text must be on SINGLE LINES - replace newlines with spaces
+- Use double quotes, escape internal quotes as \\"
+- COMPLETE the entire JSON - don't truncate any entries
+- Keep ALL reviews VERY brief (under 150 chars per player)
+- If running out of space, prioritize completing all player entries over length
 
-Expected format:
-{{"per_player": {{"PlayerName": "review text"}}, "overall": "summary text", "lessons": {{"RoleName": ["rule1", "rule2"]}}}}
+Expected format (single line, no line breaks in strings):
+{{"per_player": {{"PlayerName": "brief review"}}, "overall": "brief summary", "lessons": {{"RoleName": ["rule1", "rule2"]}}}}
 
+IMPORTANT: Make sure to close ALL quotes and braces. The response must end with }}
 Start your response with {{ and end with }}
 """
         response = _run_model_sync(
@@ -90,35 +137,13 @@ Start your response with {{ and end with }}
             else:
                 text = str(content)
 
-            # Clean up markdown code blocks if present
-            text = text.strip()
-            if text.startswith("```json"):
-                text = text[7:]
-            if text.startswith("```"):
-                text = text[3:]
-            if text.endswith("```"):
-                text = text[:-3]
-            text = text.strip()
-
-            # Try to find JSON object if text has extra content
-            if not text.startswith("{"):
-                # Look for first { and last }
-                start_idx = text.find("{")
-                end_idx = text.rfind("}")
-                if start_idx != -1 and end_idx != -1:
-                    text = text[start_idx : end_idx + 1]
-
-            # Additional cleanup: fix common JSON issues
-            # Remove any trailing commas before closing braces
-            import re
-
-            text = re.sub(r",\s*}", "}", text)
-            text = re.sub(r",\s*]", "]", text)
+            # Use helper to extract and clean JSON
+            text = _extract_and_fix_json(text)
 
             # Parse JSON from extracted text
             data = json.loads(text)
         except json.JSONDecodeError as e:
-            # Try to save partial JSON to file for debugging
+            # Save debug info and try to recover
             print(f"Warning: Failed to parse reviewer response: {e}")
             print(f"Error position: {e.pos if hasattr(e, 'pos') else 'unknown'}")
             if "text" in locals():
@@ -126,11 +151,7 @@ Start your response with {{ and end with }}
                 print(f"Raw response (last 200 chars): ...{text[-200:]}")
                 # Save failed response for debugging
                 try:
-                    import datetime
-
                     debug_file = f".training/debug_review_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
-                    import os
-
                     os.makedirs(".training", exist_ok=True)
                     with open(debug_file, "w", encoding="utf-8") as f:
                         f.write(f"Error: {e}\n\n")
@@ -139,12 +160,110 @@ Start your response with {{ and end with }}
                 except Exception:
                     pass
 
-            # Fallback minimal structure
-            data = {
-                "per_player": {},
-                "overall": "Failed to parse review response - please check debug file",
-                "lessons": {},
-            }
+            # Try one more time with aggressive regex extraction
+            try:
+                import re
+
+                # Try to extract individual components using regex
+                per_player = {}
+                overall = ""
+                lessons = {}
+
+                # Try to fix truncated JSON by completing it
+                # If the text doesn't end with }, try to close open structures
+                if not text.rstrip().endswith("}"):
+                    # Count opening and closing braces
+                    open_braces = text.count("{")
+                    close_braces = text.count("}")
+
+                    # If we have unclosed strings, try to close them
+                    # Find the last quote and see if it's escaped
+                    if (
+                        text.count('"') % 2 == 1
+                    ):  # Odd number of quotes = unterminated string
+                        text = text + '"'  # Close the string
+
+                    # Close any unclosed braces
+                    while close_braces < open_braces:
+                        text = text + "}"
+                        close_braces += 1
+
+                # Now try to parse again
+                try:
+                    data = json.loads(text)
+                    print("Recovered complete JSON after fixing truncation")
+                except json.JSONDecodeError:
+                    # If still failing, try regex extraction
+
+                    # Extract per_player entries - handle both complete and incomplete entries
+                    # First try complete entries (with closing quote)
+                    player_pattern = r'"([^"]+)":\s*"((?:[^"\\]|\\.)*)"'
+
+                    if '"per_player"' in text:
+                        # Find the per_player section
+                        per_player_start = text.find('"per_player"')
+                        if per_player_start != -1:
+                            # Extract everything after "per_player": {
+                            section_start = text.find("{", per_player_start)
+                            if section_start != -1:
+                                # Find the end of per_player section (look for }, or next main key)
+                                section_end = len(text)
+                                for key in ['"overall"', '"lessons"']:
+                                    idx = text.find(key, section_start)
+                                    if idx != -1 and idx < section_end:
+                                        section_end = idx
+
+                                per_player_text = text[section_start:section_end]
+
+                                # Extract all player entries
+                                matches = re.findall(player_pattern, per_player_text)
+                                per_player = {
+                                    k: v.replace('\\"', '"').replace("\\n", " ")
+                                    for k, v in matches
+                                }
+
+                    # Extract overall
+                    overall_match = re.search(r'"overall":\s*"((?:[^"\\]|\\.)*)"', text)
+                    if overall_match:
+                        overall = (
+                            overall_match.group(1)
+                            .replace('\\"', '"')
+                            .replace("\\n", " ")
+                        )
+
+                    # Extract lessons if present
+                    if '"lessons"' in text:
+                        lessons_start = text.find('"lessons"')
+                        lessons_section = text[lessons_start:]
+                        # Try to extract role-based lessons
+                        role_pattern = r'"(Werewolf|Seer|Villager|Witch|Guardian|Hunter)":\s*\[((?:[^\]]*)?)\]'
+                        role_matches = re.findall(role_pattern, lessons_section)
+                        for role, rules_text in role_matches:
+                            # Extract individual rules
+                            rules = re.findall(r'"([^"]+)"', rules_text)
+                            lessons[role] = rules
+
+                    # If we got something useful, use it
+                    if per_player or overall:
+                        print(
+                            f"Recovered partial data using regex fallback ({len(per_player)} players)"
+                        )
+                        data = {
+                            "per_player": per_player,
+                            "overall": overall,
+                            "lessons": lessons,
+                        }
+                    else:
+                        raise ValueError("Regex recovery failed")
+
+            except Exception as recovery_error:
+                print(f"Recovery attempt failed: {recovery_error}")
+                # Fallback minimal structure
+                data = {
+                    "per_player": {},
+                    "overall": "Failed to parse review response - please check debug file",
+                    "lessons": {},
+                }
         except Exception as e:
             print(f"Warning: Unexpected error in reviewer: {e}")
             data = {
@@ -174,10 +293,16 @@ You are a strategy critic for the Werewolf game. You will refine role-based rule
 Input lessons:
 {json.dumps(lessons_by_role, indent=2)}
 
-CRITICAL: Return ONLY valid JSON. No markdown, no code blocks, no explanation.
-Format: {{"RoleName": ["rule1", "rule2", "rule3"]}}
+CRITICAL JSON FORMATTING RULES:
+- Return ONLY valid JSON, nothing else
+- NO markdown code blocks (no ```)
+- NO explanatory text before or after
+- Keep all text on SINGLE LINES - replace any newlines with spaces
+- Use double quotes for strings
+- Escape internal quotes as \\"
+- Complete the entire JSON object
 
-Ensure all strings are properly quoted and escaped. Make sure the JSON is complete and valid.
+Format: {{"RoleName": ["rule1", "rule2", "rule3"]}}
 """
         response = _run_model_sync(
             self.model, [Msg(name="critic", content=prompt, role="user")]
@@ -195,28 +320,8 @@ Ensure all strings are properly quoted and escaped. Make sure the JSON is comple
             else:
                 text = str(content)
 
-            # Clean up markdown code blocks if present
-            text = text.strip()
-            if text.startswith("```json"):
-                text = text[7:]
-            if text.startswith("```"):
-                text = text[3:]
-            if text.endswith("```"):
-                text = text[:-3]
-            text = text.strip()
-
-            # Try to find JSON object if text has extra content
-            if not text.startswith("{"):
-                start_idx = text.find("{")
-                end_idx = text.rfind("}")
-                if start_idx != -1 and end_idx != -1:
-                    text = text[start_idx : end_idx + 1]
-
-            # Additional cleanup: fix common JSON issues
-            import re
-
-            text = re.sub(r",\s*}", "}", text)
-            text = re.sub(r",\s*]", "]", text)
+            # Use helper to extract and clean JSON
+            text = _extract_and_fix_json(text)
 
             # Parse JSON from extracted text
             data = json.loads(text)
@@ -226,6 +331,16 @@ Ensure all strings are properly quoted and escaped. Make sure the JSON is comple
             print(f"Error position: {e.pos if hasattr(e, 'pos') else 'unknown'}")
             if "text" in locals():
                 print(f"Raw response (first 500 chars): {text[:500]}...")
+                # Save failed response for debugging
+                try:
+                    debug_file = f".training/debug_critic_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
+                    os.makedirs(".training", exist_ok=True)
+                    with open(debug_file, "w", encoding="utf-8") as f:
+                        f.write(f"Error: {e}\n\n")
+                        f.write(f"Full response:\n{text}")
+                    print(f"Saved failed response to {debug_file}")
+                except Exception:
+                    pass
             # Return original lessons if parsing fails
             return lessons_by_role
         except Exception as e:
