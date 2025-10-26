@@ -301,6 +301,8 @@ Recent discussion:
 
 As a villager, speak naturally about what you think. Talk like a real person in a conversation, not like you're writing a report. Share your thoughts, suspicions, and questions in 2-4 sentences.
 
+IMPORTANT: Just provide your statement directly. Do NOT start with your name.
+
 Your statement:"""
 
         response = _run_model_sync(
@@ -379,6 +381,8 @@ Recent discussion:
 {self._format_discussion(discussion_history)}
 
 You're a werewolf pretending to be an innocent villager. Speak naturally like you're in a real conversation - share your thoughts and suspicions in 2-4 sentences, but stay in character and don't reveal you're a werewolf.
+
+IMPORTANT: Just provide your statement directly. Do NOT start with your name.
 
 Your statement:"""
 
@@ -524,6 +528,8 @@ Your knowledge as Seer:
 
 You're the seer, but don't reveal it too obviously. Speak naturally like in a conversation (2-4 sentences). Guide others toward suspecting werewolves without being too direct.
 {f'You know these are werewolves: {", ".join(known_wolves)}' if known_wolves else ''}
+
+IMPORTANT: Just provide your statement directly. Do NOT start with your name.
 
 Your statement:"""
 
@@ -701,6 +707,8 @@ Recent discussion:
 
 You're the witch but pretending to be a regular villager. Speak naturally like in a conversation (2-4 sentences). Share your thoughts without revealing your role.
 
+IMPORTANT: Just provide your statement directly. Do NOT start with your name.
+
 Your statement:"""
 
         response = _run_model_sync(
@@ -811,6 +819,8 @@ Recent discussion:
 
 You're the guardian but pretending to be a regular villager. Speak naturally like in a conversation (2-4 sentences). Share your thoughts without revealing your role.
 
+IMPORTANT: Just provide your statement directly. Do NOT start with your name.
+
 Your statement:"""
 
         response = _run_model_sync(
@@ -919,6 +929,8 @@ Recent discussion:
 {self._format_discussion(discussion_history)}
 
 You're the hunter but pretending to be a regular villager. Speak naturally like in a conversation (2-4 sentences). Share your thoughts without revealing your role.
+
+IMPORTANT: Just provide your statement directly. Do NOT start with your name.
 
 Your statement:"""
 
