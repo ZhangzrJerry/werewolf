@@ -86,6 +86,58 @@ class TestRoleAssignment(unittest.TestCase):
         self.assertEqual(roles.count(Role.GUARDIAN), 1)
 
 
+class TestRoleTeamDetection(unittest.TestCase):
+    """Test Role enum team detection methods"""
+
+    def test_werewolf_is_werewolf(self):
+        """Test that werewolf role is identified as werewolf"""
+        self.assertTrue(Role.WEREWOLF.is_werewolf())
+
+    def test_villager_not_werewolf(self):
+        """Test that villager is not werewolf"""
+        self.assertFalse(Role.VILLAGER.is_werewolf())
+
+    def test_seer_not_werewolf(self):
+        """Test that seer is not werewolf"""
+        self.assertFalse(Role.SEER.is_werewolf())
+
+    def test_witch_not_werewolf(self):
+        """Test that witch is not werewolf"""
+        self.assertFalse(Role.WITCH.is_werewolf())
+
+    def test_hunter_not_werewolf(self):
+        """Test that hunter is not werewolf"""
+        self.assertFalse(Role.HUNTER.is_werewolf())
+
+    def test_guardian_not_werewolf(self):
+        """Test that guardian is not werewolf"""
+        self.assertFalse(Role.GUARDIAN.is_werewolf())
+
+    def test_werewolf_team(self):
+        """Test that werewolf returns bad team"""
+        self.assertEqual(Role.WEREWOLF.get_team(), "坏人")
+
+    def test_villager_team(self):
+        """Test that villager returns good team"""
+        self.assertEqual(Role.VILLAGER.get_team(), "好人")
+
+    def test_seer_team(self):
+        """Test that seer returns good team"""
+        self.assertEqual(Role.SEER.get_team(), "好人")
+
+    def test_witch_team(self):
+        """Test that witch returns good team"""
+        self.assertEqual(Role.WITCH.get_team(), "好人")
+
+    def test_hunter_team(self):
+        """Test that hunter returns good team"""
+        self.assertEqual(Role.HUNTER.get_team(), "好人")
+
+    def test_guardian_team(self):
+        """Test that guardian returns good team"""
+        self.assertEqual(Role.GUARDIAN.get_team(), "好人")
+
+
 class TestNightPhase(unittest.TestCase):
     """Test night phase execution"""
 
