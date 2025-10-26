@@ -312,10 +312,10 @@ Game Context:
 
 This is your last chance to speak. What are your final words?
 Consider:
-1. Share any important information you know
-2. Express your suspicions
+1. Share any important information you actually know
+2. Express your suspicions based on discussions
 3. Guide your allies (if you're on the good side)
-4. Don't reveal your role unless it helps your team
+4. Reveal your role only if it helps your team
 
 Your last words (keep it brief, 2-3 sentences):"""
 
@@ -411,6 +411,10 @@ Reasoning: [your reasoning]"""
 class WerewolfAgent(WerewolfAgentBase):
     """Werewolf agent - evil side, can kill at night"""
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.kill_history: List[Dict[str, str]] = []  # Track who was killed each night
+
     def _get_default_sys_prompt(self) -> str:
         return """You are a WEREWOLF in the Werewolf game.
 
@@ -493,12 +497,28 @@ Your choice: """
             return "No discussion yet."
         return "\n".join([f"{msg.name}: {msg.content}" for msg in messages[-10:]])
 
+    def _format_kill_history(self) -> str:
+        """Format werewolf kill history for prompts"""
+        if not self.kill_history:
+            return "No kills recorded yet."
+        return "\n".join(
+            [
+                f"Night {i+1}: Targeted {k['target']}"
+                + (f" (Result: {k['result']})" if "result" in k else "")
+                for i, k in enumerate(self.kill_history)
+            ]
+        )
+
     def _extract_vote(self, response: str, valid_players: List[str]) -> str:
         response_upper = response.upper()
         for player in valid_players:
             if player.upper() in response_upper:
                 return player
         return valid_players[0] if valid_players else ""
+
+    def record_kill_result(self, target: str, result: str = "unknown"):
+        """Record the result of a kill attempt"""
+        self.kill_history.append({"target": target, "result": result})
 
     def vote(self, context: str, alive_players: List[str]) -> str:
         """Vote for a player to eliminate (as werewolf pretending to be villager)"""
@@ -686,6 +706,11 @@ class WitchAgent(WerewolfAgentBase):
         super().__init__(*args, **kwargs)
         self.antidote_used = False
         self.poison_used = False
+        self.night_victims: List[Dict[str, Any]] = (
+            []
+        )  # Track who was attacked each night
+        self.saved_player: str = None  # Who was saved with antidote
+        self.poisoned_player: str = None  # Who was poisoned
 
     def _get_default_sys_prompt(self) -> str:
         return """You are the WITCH in the Werewolf game.
@@ -714,12 +739,20 @@ Decision Making:
         if self.antidote_used:
             return False
 
+        # Record victim information
+        self.night_victims.append(
+            {"victim": victim, "round": len(self.night_victims) + 1}
+        )
+
         prompt = f"""Night Phase - Witch's Decision (Antidote)
 
 The werewolves have attacked: {victim}
 
 Context:
 {context}
+
+Previous night victims:
+{self._format_night_history()}
 
 You have ONE antidote. Should you use it to save {victim}?
 Strategy guidelines for your role:
@@ -729,6 +762,7 @@ Consider:
 1. Is {victim} a valuable player?
 2. Could {victim} be the seer or other important role?
 3. Should you save the antidote for later?
+4. Would guardian protect it instead?
 
 Decision (YES/NO):"""
 
@@ -739,7 +773,19 @@ Decision (YES/NO):"""
 
         if decision:
             self.antidote_used = True
+            self.saved_player = victim
         return decision
+
+    def _format_night_history(self) -> str:
+        """Format night victim history"""
+        if not self.night_victims:
+            return "No night attacks recorded yet"
+        return "\n".join(
+            [
+                f"Night {v['round']}: {v['victim']} was attacked"
+                for v in self.night_victims
+            ]
+        )
 
     def night_action_poison(self, context: str, targets: List[str]) -> Optional[str]:
         """Decide whether to poison someone"""
@@ -777,6 +823,7 @@ Decision: POISON: [player_name] or PASS"""
         target = self._extract_choice(_extract_text_content(response), targets)
         if target:
             self.poison_used = True
+            self.poisoned_player = target
         return target
 
     def _extract_choice(self, response: str, valid_players: List[str]) -> Optional[str]:
@@ -958,6 +1005,35 @@ Reasoning: [your reasoning]"""
             if player.upper() in response_upper:
                 return player
         return valid_players[0] if valid_players else ""
+
+    def last_words(self, context: str, cause_of_death: str) -> str:
+        """Guardian's last words - can mention protection patterns"""
+        protection_history = []
+        if hasattr(self, "last_protected") and self.last_protected:
+            protection_history.append(f"Last protected: {self.last_protected}")
+
+        prompt = f"""You are about to die in the Werewolf game.
+        
+Your Role: {self.role.value}
+Cause of Death: {cause_of_death}
+{chr(10).join(protection_history) if protection_history else ""}
+
+Game Context:
+{context}
+
+CRITICAL: You can share information about who you protected to help villagers deduce information.
+- Mentioning who you protected can help confirm they're not werewolves
+- Revealing protection patterns might help identify who survived werewolf attacks
+- Be careful not to mislead your team
+
+This is your last chance to speak. What are your final words?
+
+Your last words (keep it brief, 2-3 sentences):"""
+
+        response = _run_model_sync(
+            self.model, [Msg(name=self.name, content=prompt, role="user")]
+        )
+        return _extract_text_content(response)
 
 
 class HunterAgent(WerewolfAgentBase):
