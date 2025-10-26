@@ -60,11 +60,28 @@ Do not include markdown.
             self.model, [Msg(name="reviewer", content=prompt, role="user")]
         )
         try:
-            text = getattr(response, "content", "")
+            # Extract content from AgentScope response format
+            content = getattr(response, "content", "")
+
+            # Handle AgentScope's list[dict] format: [{'type': 'text', 'text': '...'}]
+            if isinstance(content, list) and len(content) > 0:
+                if isinstance(content[0], dict) and "text" in content[0]:
+                    text = content[0]["text"]
+                else:
+                    text = str(content[0])
+            else:
+                text = str(content)
+
+            # Parse JSON from extracted text
             data = json.loads(text)
-        except Exception:
+        except Exception as e:
             # Fallback minimal structure
-            data = {"per_player": {}, "overall": text, "lessons": {}}
+            print(f"Warning: Failed to parse reviewer response: {e}")
+            data = {
+                "per_player": {},
+                "overall": str(text) if "text" in locals() else "",
+                "lessons": {},
+            }
         per_player = {k: str(v) for k, v in data.get("per_player", {}).items()}
         lessons = {k: [str(x) for x in v] for k, v in data.get("lessons", {}).items()}
         overall = str(data.get("overall", ""))
@@ -90,9 +107,23 @@ Output JSON only: {{ role: [rules...] }}
             self.model, [Msg(name="critic", content=prompt, role="user")]
         )
         try:
-            data = json.loads(getattr(response, "content", ""))
+            # Extract content from AgentScope response format
+            content = getattr(response, "content", "")
+
+            # Handle AgentScope's list[dict] format: [{'type': 'text', 'text': '...'}]
+            if isinstance(content, list) and len(content) > 0:
+                if isinstance(content[0], dict) and "text" in content[0]:
+                    text = content[0]["text"]
+                else:
+                    text = str(content[0])
+            else:
+                text = str(content)
+
+            # Parse JSON from extracted text
+            data = json.loads(text)
             return {k: [str(x) for x in v] for k, v in data.items()}
-        except Exception:
+        except Exception as e:
+            print(f"Warning: Failed to parse critic response: {e}")
             return lessons_by_role
 
 

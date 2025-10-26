@@ -422,10 +422,7 @@ Phase: {self.game.state.phase.value}
 Day: {self.game.state.day_count}
 
 Alive Players ({len(self.game.state.alive_players)}):
-{', '.join(self.game.state.alive_players)}
-
-Recent Events:
-{chr(10).join(self.game.state.game_log[-5:])}"""
+{', '.join(self.game.state.alive_players)}"""
         return context
 
     def _log(self, message: str):

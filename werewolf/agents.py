@@ -83,50 +83,89 @@ def _extract_text_content(response):
         return str(content)
 
 
-def _run_model_sync(model, msg_list):
-    """Synchronous wrapper for async model calls
+def _run_model_sync(model, msg_list, max_retries: int = 3):
+    """Synchronous wrapper for async model calls with retry logic
 
     Args:
         model: The AgentScope model instance
         msg_list: List of Msg objects to send to the model
+        max_retries: Maximum number of retry attempts for network errors
     """
-    try:
-        # Get or create event loop
-        loop = asyncio.get_event_loop()
-    except RuntimeError:
-        # No event loop in current thread, create a new one
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
+    import time
 
-    # Convert Msg objects to dict format expected by model
-    # AgentScope 1.0 models expect list of dicts with 'role' and 'content'
-    messages = []
-    for msg in msg_list:
-        if hasattr(msg, "to_dict"):
-            msg_dict = msg.to_dict()
-            messages.append({"role": msg_dict["role"], "content": msg_dict["content"]})
-        else:
-            # Fallback for dict input
-            messages.append(msg)
+    # Retry logic for handling network errors
+    last_error = None
+    for attempt in range(max_retries):
+        try:
+            # Get or create event loop
+            loop = asyncio.get_event_loop()
+        except RuntimeError:
+            # No event loop in current thread, create a new one
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
 
-    # Run the async model call synchronously
-    # Note: stream setting should be in model's generate_kwargs config
-    import inspect
+        try:
+            # Convert Msg objects to dict format expected by model
+            # AgentScope 1.0 models expect list of dicts with 'role' and 'content'
+            messages = []
+            for msg in msg_list:
+                if hasattr(msg, "to_dict"):
+                    msg_dict = msg.to_dict()
+                    messages.append(
+                        {"role": msg_dict["role"], "content": msg_dict["content"]}
+                    )
+                else:
+                    # Fallback for dict input
+                    messages.append(msg)
 
-    response = loop.run_until_complete(model(messages))
+            # Run the async model call synchronously
+            # Note: stream setting should be in model's generate_kwargs config
+            import inspect
 
-    # Check if response is async generator (stream=True case)
-    if inspect.isasyncgen(response):
-        # Consume the generator to get the final response
-        async def consume_stream():
-            final_response = None
-            async for chunk in response:
-                final_response = chunk
-            return final_response
+            response = loop.run_until_complete(model(messages))
 
-        response = loop.run_until_complete(consume_stream())
+            # Check if response is async generator (stream=True case)
+            if inspect.isasyncgen(response):
+                # Consume the generator to get the final response
+                async def consume_stream():
+                    final_response = None
+                    async for chunk in response:
+                        final_response = chunk
+                    return final_response
 
-    return response
+                response = loop.run_until_complete(consume_stream())
+
+            return response
+
+        except Exception as e:
+            last_error = e
+            error_msg = str(e).lower()
+
+            # Check if it's a retryable network error
+            is_network_error = any(
+                keyword in error_msg
+                for keyword in [
+                    "peer closed connection",
+                    "incomplete chunked read",
+                    "connection reset",
+                    "timeout",
+                    "connection error",
+                    "remote protocol error",
+                ]
+            )
+
+            if is_network_error and attempt < max_retries - 1:
+                wait_time = (attempt + 1) * 2  # Exponential backoff: 2s, 4s, 6s
+                print(f"Network error (attempt {attempt + 1}/{max_retries}): {e}")
+                print(f"Retrying in {wait_time}s...")
+                time.sleep(wait_time)
+                continue
+            else:
+                # Non-retryable error or max retries reached
+                raise
+
+    # If we get here, all retries failed
+    raise last_error
 
 
 class WerewolfAgentBase(AgentBase):
