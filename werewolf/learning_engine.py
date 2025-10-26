@@ -97,7 +97,11 @@ class ReviewAgent:
         prompt = f"""You are a Werewolf-game analyst. Read the full game transcript and produce:
 1) A concise per-player review (3-4 sentences max, under 150 chars each): decision quality, key mistakes, and ONE improvement tip.
 2) An overall game summary explaining why the winner won (4-5 sentences max, under 300 chars).
-3) A short list of 2-3 actionable strategy rules per role (Villager, Werewolf, Seer, Witch, Guardian, Hunter). Each rule must be under 12 words.
+3) Strategy rules per role (Villager, Werewolf, Seer, Witch, Guardian, Hunter):
+   - Extract 4-6 actionable strategies from this game for EACH role
+   - Each rule must be specific, concrete, and under 15 words
+   - Focus on: timing, communication, deception, information management, voting patterns
+   - Include both successful tactics and lessons from mistakes
 
 Winner: {winner}
 Players and roles: {players}
@@ -113,10 +117,10 @@ CRITICAL JSON FORMATTING RULES - FOLLOW EXACTLY:
 - Use double quotes, escape internal quotes as \\"
 - COMPLETE the entire JSON - don't truncate any entries
 - Keep ALL reviews VERY brief (under 150 chars per player)
-- If running out of space, prioritize completing all player entries over length
+- Generate MORE strategy rules (4-6 per role) based on what happened in THIS game
 
 Expected format (single line, no line breaks in strings):
-{{"per_player": {{"PlayerName": "brief review"}}, "overall": "brief summary", "lessons": {{"RoleName": ["rule1", "rule2"]}}}}
+{{"per_player": {{"PlayerName": "brief review"}}, "overall": "brief summary", "lessons": {{"RoleName": ["rule1", "rule2", "rule3", "rule4", "rule5"]}}}}
 
 IMPORTANT: Make sure to close ALL quotes and braces. The response must end with }}
 Start your response with {{ and end with }}
@@ -285,10 +289,14 @@ class CriticAgent:
         self, lessons_by_role: Dict[str, List[str]]
     ) -> Dict[str, List[str]]:
         prompt = f"""
-You are a strategy critic for the Werewolf game. You will refine role-based rules.
-- Remove duplicates and contradictions.
-- Make each rule specific, imperative, and at most 16 words.
-- Keep 5 or fewer rules per role, prioritized for impact.
+You are a strategy critic for the Werewolf game. Refine and consolidate role-based rules.
+
+Your tasks:
+1. MERGE similar or overlapping rules into comprehensive ones
+2. Remove exact duplicates and contradictions
+3. Keep rules specific, imperative, and actionable (max 18 words each)
+4. Preserve 6-10 high-impact rules per role (prioritize quality and coverage)
+5. Organize rules by theme: early-game, mid-game, communication, deception, voting
 
 Input lessons:
 {json.dumps(lessons_by_role, indent=2)}
@@ -296,13 +304,21 @@ Input lessons:
 CRITICAL JSON FORMATTING RULES:
 - Return ONLY valid JSON, nothing else
 - NO markdown code blocks (no ```)
-- NO explanatory text before or after
 - Keep all text on SINGLE LINES - replace any newlines with spaces
 - Use double quotes for strings
 - Escape internal quotes as \\"
 - Complete the entire JSON object
 
-Format: {{"RoleName": ["rule1", "rule2", "rule3"]}}
+Format: {{"RoleName": ["rule1", "rule2", "rule3", "rule4", "rule5", "rule6"]}}
+
+Examples of GOOD merging:
+Input: ["Claim Seer early if you verified someone", "Seers should reveal after first good check"]
+Output: ["Claim Seer immediately after verifying a good player to build trust circle"]
+
+Input: ["Vote with the majority", "Follow consensus on votes"]
+Output: ["Analyze voting patterns rather than blindly following consensus"]
+
+Generate merged, high-quality rules (6-10 per role).
 """
         response = _run_model_sync(
             self.model, [Msg(name="critic", content=prompt, role="user")]
@@ -375,9 +391,22 @@ class StrategyManager:
         except Exception:
             return []
 
-    def save_rules_for_role(self, role_name: str, rules: List[str]) -> None:
-        """Save strategy rules for a role, backing up the old version first"""
+    def save_rules_for_role(
+        self, role_name: str, rules: List[str], merge_with_existing: bool = True
+    ) -> None:
+        """Save strategy rules for a role, optionally merging with existing rules
+
+        Args:
+            role_name: The role to save rules for
+            rules: New rules to save
+            merge_with_existing: If True, merge with existing rules and deduplicate
+        """
         path = self._file_for_role(role_name)
+
+        # Load existing rules if merging
+        existing_rules = []
+        if merge_with_existing and os.path.exists(path):
+            existing_rules = self.load_rules_for_role(role_name)
 
         # Backup existing file before overwriting
         if os.path.exists(path):
@@ -391,14 +420,37 @@ class StrategyManager:
             except Exception as e:
                 print(f"Warning: Failed to backup {role_name} strategy: {e}")
 
+        # Merge and deduplicate rules
+        if merge_with_existing and existing_rules:
+            # Combine old and new rules
+            all_rules = existing_rules + rules
+            # Simple deduplication: remove exact duplicates (case-insensitive)
+            seen = set()
+            unique_rules = []
+            for rule in all_rules:
+                rule_lower = rule.lower().strip()
+                if rule_lower and rule_lower not in seen:
+                    seen.add(rule_lower)
+                    unique_rules.append(rule.strip())
+            # Keep most recent rules (limit to prevent explosion)
+            final_rules = unique_rules[-15:]  # Keep up to 15 rules max
+        else:
+            # Just use new rules
+            final_rules = [r.strip() for r in rules if r.strip()]
+
         # Save new strategy
         os.makedirs(self.root, exist_ok=True)
         data = {
-            "rules": list(dict.fromkeys([r.strip() for r in rules if r.strip()])),
+            "rules": final_rules,
             "updated_at": datetime.datetime.now().isoformat(),
+            "total_updates": len(existing_rules) if existing_rules else 0,
         }
         with open(path, "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=2)
+
+        print(
+            f"Saved {len(final_rules)} rules for {role_name} (merged: {merge_with_existing})"
+        )
 
     def apply_to_agents(
         self, agents: Dict[str, WerewolfAgentBase], roles: Dict[str, Role]
