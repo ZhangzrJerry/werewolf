@@ -59,6 +59,7 @@ class WerewolfGameOrchestrator:
         # Real-time log file
         import datetime
         import os
+        import uuid
 
         # Determine log file path
         if log_file is None:
@@ -67,7 +68,11 @@ class WerewolfGameOrchestrator:
             if not os.path.exists(log_dir):
                 os.makedirs(log_dir)
             timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-            log_file = os.path.join(log_dir, f"werewolf_game_{timestamp}.txt")
+            # Add unique ID to prevent conflicts in parallel execution
+            unique_id = str(uuid.uuid4())[:8]
+            log_file = os.path.join(
+                log_dir, f"werewolf_game_{timestamp}_{unique_id}.txt"
+            )
         self.log_file = log_file
 
         # Game record for saving complete transcript (must be before _create_agents)
