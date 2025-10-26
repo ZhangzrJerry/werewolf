@@ -129,7 +129,8 @@ class StrategyManager:
 
         # Backup existing file before overwriting
         if os.path.exists(path):
-            timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+            # Use microseconds to ensure unique backup filenames
+            timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S_%f")
             backup_path = self._backup_file_for_role(role_name, timestamp)
             try:
                 import shutil

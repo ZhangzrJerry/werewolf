@@ -1,29 +1,5 @@
 # Werewolf Game
 
-一个使用 AgentScope 实现的多智能体狼人杀游戏。
-
-## 安装
-
-```powershell
-# 激活虚拟环境
-.\env\Scripts\Activate.ps1
-
-# 安装项目
-pip install -e .
-
-# 安装测试依赖（可选）
-pip install -e ".[test]"
-```
-
-## 使用方法
-
-````python
-from werewolf import WerewolfGame
-
-# 创建一个6人局游戏
-players = ["Alice", "Bob", "Charlie", "David", "Eve", "Frank"]
-# Werewolf Game
-
 一个使用 AgentScope 实现的可迭代多智能体狼人杀游戏，支持规则引擎与 LLM 智能对局两种模式。
 
 ## 🚀 快速开始（Windows PowerShell）
@@ -37,7 +13,7 @@ pip install -e .
 
 # 3) 可选：安装测试依赖
 pip install -e ".[test]"
-````
+```
 
 ### 启动方式 A：规则演示（无需模型/AgentScope）
 
