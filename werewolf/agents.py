@@ -299,12 +299,9 @@ Communication Style:
 Recent discussion:
 {self._format_discussion(discussion_history)}
 
-As a villager, analyze the situation and respond. Consider:
-1. Who seems suspicious and why?
-2. Who are you trusting and why?
-3. What questions should you ask?
+As a villager, speak naturally about what you think. Talk like a real person in a conversation, not like you're writing a report. Share your thoughts, suspicions, and questions in 2-4 sentences.
 
-Your response:"""
+Your statement:"""
 
         response = _run_model_sync(
             self.model, [Msg(name=self.name, content=prompt, role="user")]
@@ -381,13 +378,9 @@ CRITICAL: Never reveal you are a werewolf during day discussions!"""
 Recent discussion:
 {self._format_discussion(discussion_history)}
 
-As a werewolf PRETENDING to be a villager:
-1. Act like you're trying to find werewolves
-2. Subtly deflect suspicion from yourself and allies
-3. Build trust with real villagers
-4. Don't be too obvious
+You're a werewolf pretending to be an innocent villager. Speak naturally like you're in a real conversation - share your thoughts and suspicions in 2-4 sentences, but stay in character and don't reveal you're a werewolf.
 
-Your response (stay in character as innocent villager):"""
+Your statement:"""
 
         response = _run_model_sync(
             self.model, [Msg(name=self.name, content=prompt, role="user")]
@@ -529,10 +522,10 @@ Recent discussion:
 Your knowledge as Seer:
 {self._format_known_roles()}
 
-As the seer, guide the discussion WITHOUT revealing your role too obviously.
-{'Focus on eliminating: ' + ', '.join(known_wolves) if known_wolves else 'Share observations carefully.'}
+You're the seer, but don't reveal it too obviously. Speak naturally like in a conversation (2-4 sentences). Guide others toward suspecting werewolves without being too direct.
+{f'You know these are werewolves: {", ".join(known_wolves)}' if known_wolves else ''}
 
-Your response:"""
+Your statement:"""
 
         response = _run_model_sync(
             self.model, [Msg(name=self.name, content=prompt, role="user")]
@@ -706,13 +699,9 @@ Decision: POISON: [player_name] or PASS"""
 Recent discussion:
 {self._format_discussion(discussion_history)}
 
-As the witch (but pretending to be a regular villager), analyze the situation and respond.
-Consider:
-1. Who seems suspicious and why?
-2. Use your knowledge of who was attacked at night carefully
-3. Don't reveal your role unless absolutely necessary
+You're the witch but pretending to be a regular villager. Speak naturally like in a conversation (2-4 sentences). Share your thoughts without revealing your role.
 
-Your response:"""
+Your statement:"""
 
         response = _run_model_sync(
             self.model, [Msg(name=self.name, content=prompt, role="user")]
@@ -820,13 +809,9 @@ Your choice:"""
 Recent discussion:
 {self._format_discussion(discussion_history)}
 
-As the guardian (but pretending to be a regular villager), analyze the situation and respond.
-Consider:
-1. Who seems suspicious and why?
-2. Use your protection knowledge carefully
-3. Don't reveal your role unless absolutely necessary
+You're the guardian but pretending to be a regular villager. Speak naturally like in a conversation (2-4 sentences). Share your thoughts without revealing your role.
 
-Your response:"""
+Your statement:"""
 
         response = _run_model_sync(
             self.model, [Msg(name=self.name, content=prompt, role="user")]
@@ -933,13 +918,9 @@ Your choice (just the player name):"""
 Recent discussion:
 {self._format_discussion(discussion_history)}
 
-As the hunter (but pretending to be a regular villager), analyze the situation and respond.
-Consider:
-1. Who seems suspicious and why?
-2. Don't reveal your hunter role unless absolutely necessary
-3. Stay alive to use your shooting ability when needed
+You're the hunter but pretending to be a regular villager. Speak naturally like in a conversation (2-4 sentences). Share your thoughts without revealing your role.
 
-Your response:"""
+Your statement:"""
 
         response = _run_model_sync(
             self.model, [Msg(name=self.name, content=prompt, role="user")]
