@@ -9,8 +9,8 @@ footer: <a href="https://github.com/zhangzrjerry">@zhangzrjerry</a>
 backgroundColor: "rgb(35, 39, 54)"
 ---
 
-# 狼人杀 Agent
+# 基于 AgentScope 的狼人杀智能体
 
-## 基于 AgentScope 1.0 开发
+## 构建具备复盘与迭代能力的自我进化多智能体系统
 
 ---
