@@ -104,6 +104,11 @@ def run_single_game(
             ]
 
     try:
+        if verbose:
+            print(
+                f"\n[Game {game_num}] 1️⃣  Loading strategy prompts from .training/strategies/"
+            )
+
         # Create orchestrator (will auto-load strategies from .training/strategies/)
         orchestrator = WerewolfGameOrchestrator(
             player_names=player_names,
@@ -113,9 +118,22 @@ def run_single_game(
             verbose=verbose,
         )
 
+        if verbose:
+            print(
+                f"[Game {game_num}] 2️⃣  Injected prompts into {len(player_names)} agents"
+            )
+            print(f"[Game {game_num}] 3️⃣  Starting self-play game...")
+
         # Run game
         winner = orchestrator.run_game()
         summary = orchestrator.get_game_summary()
+
+        if verbose:
+            print(f"[Game {game_num}] 4️⃣  Game finished. Winner: {winner}")
+            print(
+                f"[Game {game_num}] 5️⃣  LLM reviewing results & optimizing strategies..."
+            )
+            print(f"[Game {game_num}] 6️⃣  Strategies updated and saved")
 
         return {
             "game_num": game_num,
@@ -148,7 +166,15 @@ def run_training(
     verbose: bool = False,
     resume: bool = True,
 ):
-    """Run self-play training for multiple games
+    """Run self-play training with strategy prompt iteration loop
+
+    Loop Flow:
+    1. Load current strategy prompts (from previous iteration)
+    2. Inject prompts into agents
+    3. Run self-play games
+    4. Review game results with LLM
+    5. Optimize strategy prompts based on review
+    6. Save updated prompts → repeat
 
     Args:
         num_games: Number of games to run
@@ -168,19 +194,45 @@ def run_training(
             "total_games": 0,
             "last_updated": None,
             "games_history": [],
+            "strategy_iterations": 0,
         }
     )
 
     start_game = progress["total_games"]
+
+    # Find model display name
+    model_display = model_config_name
+    for config in MODEL_CONFIGS:
+        if config.get("config_name") == model_config_name:
+            model_type = config.get("model_type", "")
+            model_name = config.get("model_name", "")
+            if model_type == "dashscope_chat":
+                model_display = f"通义千问 ({model_name})"
+            elif model_type == "openai_chat":
+                model_display = f"OpenAI ({model_name})"
+            elif model_type == "ollama_chat":
+                model_display = f"Ollama ({model_name})"
+            elif model_type == "modelscope_chat":
+                model_display = f"魔搭 ModelScope ({model_name})"
+            break
+
     print(f"\n{'='*70}")
-    print(f"WEREWOLF SELF-PLAY TRAINING")
+    print(f"WEREWOLF SELF-PLAY TRAINING - STRATEGY PROMPT ITERATION")
     print(f"{'='*70}")
-    print(f"Model: {model_config_name}")
+    print(f"Model: {model_display}")
     print(f"Game type: {game_type}")
     print(f"Total games to run: {num_games}")
     print(f"Starting from game: {start_game + 1}")
+    print(f"Strategy iterations completed: {progress.get('strategy_iterations', 0)}")
     print(f"Parallel workers: {parallel}")
     print(f"Resume mode: {resume}")
+    print(f"\n📋 Training Loop:")
+    print(f"  1️⃣  Load Strategy Prompts (.training/strategies/)")
+    print(f"  2️⃣  Inject Prompts → Agents")
+    print(f"  3️⃣  Run Self-Play Games")
+    print(f"  4️⃣  Review Results (LLM Analysis)")
+    print(f"  5️⃣  Optimize Strategy Prompts")
+    print(f"  6️⃣  Save & Backup → Next Iteration")
     print(f"{'='*70}\n")
 
     # Statistics
@@ -195,7 +247,9 @@ def run_training(
     try:
         if parallel > 1:
             # Parallel execution
-            print(f"Running {num_games} games in parallel with {parallel} workers...\n")
+            print(
+                f"🎮 Running {num_games} games in parallel with {parallel} workers...\n"
+            )
 
             with ProcessPoolExecutor(max_workers=parallel) as executor:
                 # Submit all games
