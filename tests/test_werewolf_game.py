@@ -325,19 +325,90 @@ class TestGameEndConditions(unittest.TestCase):
         self.assertTrue(ended)
         self.assertEqual(winner, "villagers")
 
-    def test_werewolves_win_when_equal_or_more(self):
-        """Test that werewolves win when they equal or outnumber villagers"""
-        # Remove villagers until werewolves equal or exceed them
+    def test_six_player_werewolves_win_condition(self):
+        """Test 6-player game: werewolves must kill all civilians AND gods"""
+        # In 6-player game, werewolves need to eliminate ALL good players
         werewolves = [p for p, r in self.game.state.roles.items() if r == Role.WEREWOLF]
         villagers = [p for p, r in self.game.state.roles.items() if r != Role.WEREWOLF]
 
-        # Remove enough villagers
-        to_remove = len(villagers) - len(werewolves)
-        for i in range(to_remove):
-            if villagers[i] in self.game.state.alive_players:
-                self.game.state.alive_players.remove(villagers[i])
+        # Remove all non-werewolves
+        for v in villagers:
+            if v in self.game.state.alive_players:
+                self.game.state.alive_players.remove(v)
 
         ended, winner = self.game.check_game_end()
+
+        self.assertTrue(ended)
+        self.assertEqual(winner, "werewolves")
+
+    def test_nine_player_werewolves_win_all_civilians(self):
+        """Test 9-player game: werewolves win when all civilians are eliminated"""
+        players = [f"Player{i}" for i in range(9)]
+        game = WerewolfGame(players, game_type="nine")
+
+        # Remove all villagers (civilians)
+        villagers = [p for p, r in game.state.roles.items() if r == Role.VILLAGER]
+        for v in villagers:
+            if v in game.state.alive_players:
+                game.state.alive_players.remove(v)
+
+        ended, winner = game.check_game_end()
+
+        self.assertTrue(ended)
+        self.assertEqual(winner, "werewolves")
+
+    def test_nine_player_werewolves_win_all_gods(self):
+        """Test 9-player game: werewolves win when all gods are eliminated"""
+        players = [f"Player{i}" for i in range(9)]
+        game = WerewolfGame(players, game_type="nine")
+
+        # Remove all gods (seer, witch, hunter)
+        gods = [
+            p
+            for p, r in game.state.roles.items()
+            if r in [Role.SEER, Role.WITCH, Role.HUNTER]
+        ]
+        for g in gods:
+            if g in game.state.alive_players:
+                game.state.alive_players.remove(g)
+
+        ended, winner = game.check_game_end()
+
+        self.assertTrue(ended)
+        self.assertEqual(winner, "werewolves")
+
+    def test_twelve_player_werewolves_win_all_civilians(self):
+        """Test 12-player game: werewolves win when all civilians are eliminated"""
+        players = [f"Player{i}" for i in range(12)]
+        game = WerewolfGame(players, game_type="twelve")
+
+        # Remove all villagers (civilians)
+        villagers = [p for p, r in game.state.roles.items() if r == Role.VILLAGER]
+        for v in villagers:
+            if v in game.state.alive_players:
+                game.state.alive_players.remove(v)
+
+        ended, winner = game.check_game_end()
+
+        self.assertTrue(ended)
+        self.assertEqual(winner, "werewolves")
+
+    def test_twelve_player_werewolves_win_all_gods(self):
+        """Test 12-player game: werewolves win when all gods are eliminated"""
+        players = [f"Player{i}" for i in range(12)]
+        game = WerewolfGame(players, game_type="twelve")
+
+        # Remove all gods (seer, witch, hunter, guardian)
+        gods = [
+            p
+            for p, r in game.state.roles.items()
+            if r in [Role.SEER, Role.WITCH, Role.HUNTER, Role.GUARDIAN]
+        ]
+        for g in gods:
+            if g in game.state.alive_players:
+                game.state.alive_players.remove(g)
+
+        ended, winner = game.check_game_end()
 
         self.assertTrue(ended)
         self.assertEqual(winner, "werewolves")
@@ -379,6 +450,80 @@ class TestGameState(unittest.TestCase):
         # Initial log should have role assignment
         self.assertTrue(len(game.state.game_log) > 0)
         self.assertIn("Roles assigned", game.state.game_log[0])
+
+    def test_death_records_werewolf_kill(self):
+        """Test that werewolf kills are recorded in death_records"""
+        players = ["Alice", "Bob", "Charlie", "David", "Eve", "Frank"]
+        game = WerewolfGame(players, game_type="six")
+
+        werewolves = [p for p, r in game.state.roles.items() if r == Role.WEREWOLF]
+        victim = [p for p in players if p not in werewolves][0]
+
+        # Werewolves attack victim
+        actions = {w: victim for w in werewolves}
+        game.execute_night_phase(actions)
+
+        # Check death record
+        self.assertIn(victim, game.state.death_records)
+        self.assertEqual(game.state.death_records[victim], "werewolf_kill")
+
+    def test_death_records_witch_poison(self):
+        """Test that witch poison deaths are recorded"""
+        players = ["Alice", "Bob", "Charlie", "David", "Eve", "Frank"]
+        game = WerewolfGame(players, game_type="six")
+
+        witch = [p for p, r in game.state.roles.items() if r == Role.WITCH][0]
+        target = [p for p in players if p != witch][0]
+
+        # Witch poisons target
+        actions = {witch: f"poison:{target}"}
+        game.execute_night_phase(actions)
+
+        # Check death record
+        self.assertIn(target, game.state.death_records)
+        self.assertEqual(game.state.death_records[target], "witch_poison")
+
+    def test_death_records_voted_out(self):
+        """Test that voting deaths are recorded"""
+        players = ["Alice", "Bob", "Charlie", "David", "Eve", "Frank"]
+        game = WerewolfGame(players, game_type="six")
+
+        target = players[0]
+        # All players vote for target
+        actions = {p: target for p in players if p != target}
+        game.execute_day_phase(actions)
+
+        # Check death record
+        self.assertIn(target, game.state.death_records)
+        self.assertEqual(game.state.death_records[target], "voted_out")
+
+
+class TestHunterRole(unittest.TestCase):
+    """Test Hunter role functionality"""
+
+    def test_hunter_in_nine_player_game(self):
+        """Test that hunter exists in 9-player game"""
+        players = [f"Player{i}" for i in range(9)]
+        game = WerewolfGame(players, game_type="nine")
+
+        hunter = [p for p, r in game.state.roles.items() if r == Role.HUNTER]
+        self.assertEqual(len(hunter), 1)
+
+    def test_hunter_in_twelve_player_game(self):
+        """Test that hunter exists in 12-player game"""
+        players = [f"Player{i}" for i in range(12)]
+        game = WerewolfGame(players, game_type="twelve")
+
+        hunter = [p for p, r in game.state.roles.items() if r == Role.HUNTER]
+        self.assertEqual(len(hunter), 1)
+
+    def test_hunter_not_in_six_player_game(self):
+        """Test that hunter does not exist in 6-player game"""
+        players = ["Alice", "Bob", "Charlie", "David", "Eve", "Frank"]
+        game = WerewolfGame(players, game_type="six")
+
+        hunter = [p for p, r in game.state.roles.items() if r == Role.HUNTER]
+        self.assertEqual(len(hunter), 0)
 
 
 if __name__ == "__main__":

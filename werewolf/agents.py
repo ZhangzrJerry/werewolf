@@ -236,6 +236,35 @@ Always think carefully about your actions and their consequences."""
         """Mark this agent as dead"""
         self.is_alive = False
 
+    def last_words(self, context: str, cause_of_death: str) -> str:
+        """Provide last words before death
+
+        Args:
+            context: Current game context
+            cause_of_death: How the player died (werewolf_kill, voted_out, witch_poison)
+        """
+        prompt = f"""You are about to die in the Werewolf game.
+        
+Your Role: {self.role.value}
+Cause of Death: {cause_of_death}
+
+Game Context:
+{context}
+
+This is your last chance to speak. What are your final words?
+Consider:
+1. Share any important information you know
+2. Express your suspicions
+3. Guide your allies (if you're on the good side)
+4. Don't reveal your role unless it helps your team
+
+Your last words (keep it brief, 2-3 sentences):"""
+
+        response = _run_model_sync(
+            self.model, [Msg(name=self.name, content=prompt, role="user")]
+        )
+        return _extract_text_content(response)
+
 
 class VillagerAgent(WerewolfAgentBase):
     """Villager agent - good side, no special abilities"""
@@ -834,6 +863,119 @@ Reasoning: [your reasoning]"""
         return valid_players[0] if valid_players else ""
 
 
+class HunterAgent(WerewolfAgentBase):
+    """Hunter agent - can shoot someone when dying (except by witch poison)"""
+
+    def _get_default_sys_prompt(self) -> str:
+        return """You are the HUNTER in the Werewolf game.
+
+Your Role:
+- You are on the good side
+- When you die (except by witch poison), you can shoot and kill one player
+- This is your revenge ability - use it wisely
+
+Strategy During Game:
+1. Participate in discussions like a villager
+2. Try to identify werewolves
+3. Don't reveal you're the hunter too early
+4. Vote to eliminate suspicious players
+
+Strategy When Dying:
+1. If killed by werewolves or voted out, you MUST shoot someone
+2. Shoot confirmed or suspected werewolves
+3. Don't shoot randomly - make it count
+4. Consider information from seer or other sources"""
+
+    def shoot_target(
+        self, context: str, alive_players: List[str], cause_of_death: str
+    ) -> str:
+        """Choose who to shoot when dying
+
+        Args:
+            context: Current game context
+            alive_players: List of players still alive
+            cause_of_death: How the hunter died
+        """
+        prompt = f"""You are the HUNTER and you are dying!
+
+Cause of Death: {cause_of_death}
+
+Game Context:
+{context}
+
+Alive Players: {', '.join(alive_players)}
+
+You can shoot ONE player before you die. Who do you choose?
+Consider:
+1. Shoot suspected werewolves
+2. Use information from discussions
+3. Make this shot count - it's your final contribution
+
+Your choice (just the player name):"""
+
+        response = _run_model_sync(
+            self.model, [Msg(name=self.name, content=prompt, role="user")]
+        )
+        return self._extract_choice(_extract_text_content(response), alive_players)
+
+    def _extract_choice(self, response: str, valid_players: List[str]) -> str:
+        response_upper = response.upper()
+        for player in valid_players:
+            if player.upper() in response_upper:
+                return player
+        return valid_players[0] if valid_players else ""
+
+    def discuss(self, context: str, discussion_history: List[Msg]) -> str:
+        """Participate in day discussion as hunter (pretending to be villager)"""
+        prompt = f"""Current game context:
+{context}
+
+Recent discussion:
+{self._format_discussion(discussion_history)}
+
+As the hunter (but pretending to be a regular villager), analyze the situation and respond.
+Consider:
+1. Who seems suspicious and why?
+2. Don't reveal your hunter role unless absolutely necessary
+3. Stay alive to use your shooting ability when needed
+
+Your response:"""
+
+        response = _run_model_sync(
+            self.model, [Msg(name=self.name, content=prompt, role="user")]
+        )
+        return _extract_text_content(response)
+
+    def vote(self, context: str, alive_players: List[str]) -> str:
+        """Vote for a player to eliminate"""
+        prompt = f"""Current game context:
+{context}
+
+Alive players: {', '.join(alive_players)}
+
+Based on all discussions, who should be voted out?
+
+Format: VOTE: [player_name]
+Reasoning: [your reasoning]"""
+
+        response = _run_model_sync(
+            self.model, [Msg(name=self.name, content=prompt, role="user")]
+        )
+        return self._extract_vote(_extract_text_content(response), alive_players)
+
+    def _format_discussion(self, messages: List[Msg]) -> str:
+        if not messages:
+            return "No discussion yet."
+        return "\n".join([f"{msg.name}: {msg.content}" for msg in messages[-10:]])
+
+    def _extract_vote(self, response: str, valid_players: List[str]) -> str:
+        response_upper = response.upper()
+        for player in valid_players:
+            if player.upper() in response_upper:
+                return player
+        return valid_players[0] if valid_players else ""
+
+
 def create_agent(name: str, role: Role, model_config_name: str) -> WerewolfAgentBase:
     """Factory function to create appropriate agent based on role"""
     agent_classes = {
@@ -842,7 +984,7 @@ def create_agent(name: str, role: Role, model_config_name: str) -> WerewolfAgent
         Role.SEER: SeerAgent,
         Role.WITCH: WitchAgent,
         Role.GUARDIAN: GuardianAgent,
-        Role.HUNTER: VillagerAgent,  # Hunter uses villager logic for now
+        Role.HUNTER: HunterAgent,
     }
 
     agent_class = agent_classes.get(role, VillagerAgent)

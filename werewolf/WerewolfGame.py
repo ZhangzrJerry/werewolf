@@ -31,6 +31,11 @@ class GameState:
     witch_poison_used: bool = False
     witch_antidote_used: bool = False
     guardian_last_guarded: Dict[str, str] | None = None
+    death_records: Dict[str, str] = None  # Track how each player died
+
+    def __post_init__(self):
+        if self.death_records is None:
+            self.death_records = {}
 
 
 class WerewolfGame:
@@ -267,7 +272,9 @@ class WerewolfGame:
             poisoned = witch_result["poisoned"]
             if poisoned in self.state.alive_players:
                 self.state.alive_players.remove(poisoned)
+                self.state.death_records[poisoned] = "witch_poison"
                 self.state.game_log.append(f"{poisoned} died by witch poison")
+                night_result["poisoned_player"] = poisoned
 
         # If there was an incoming werewolf attack, decide based on guardian + witch
         if victim:
@@ -293,7 +300,9 @@ class WerewolfGame:
         # Apply final victim removal (if any)
         if final_victim and final_victim in self.state.alive_players:
             self.state.alive_players.remove(final_victim)
+            self.state.death_records[final_victim] = "werewolf_kill"
             self.state.game_log.append(f"{final_victim} was killed at night")
+            night_result["night_death"] = final_victim
 
         self.state.phase = GamePhase.DAY
         return night_result
@@ -307,6 +316,7 @@ class WerewolfGame:
         if eliminated:
             if eliminated in self.state.alive_players:
                 self.state.alive_players.remove(eliminated)
+                self.state.death_records[eliminated] = "voted_out"
                 self.state.game_log.append(f"{eliminated} was voted out during the day")
 
         self.state.day_count += 1
@@ -314,26 +324,54 @@ class WerewolfGame:
         return day_result
 
     def check_game_end(self) -> tuple[bool, str]:
-        """Return (ended: bool, winner: 'werewolves'|'villagers'|'')."""
-        werewolves_alive = len(
-            [
-                p
-                for p in self.state.alive_players
-                if self.state.roles.get(p) == Role.WEREWOLF
-            ]
-        )
-        villagers_alive = len(
-            [
-                p
-                for p in self.state.alive_players
-                if self.state.roles.get(p) != Role.WEREWOLF
-            ]
-        )
+        """Return (ended: bool, winner: 'werewolves'|'villagers'|'').
 
-        if werewolves_alive == 0:
+        Victory conditions:
+        - 6-player game: Werewolves win if all civilians and gods are eliminated
+        - 9 and 12-player games: Werewolves win if all civilians OR all gods are eliminated
+        - Villagers win if all werewolves are eliminated
+        """
+        werewolves_alive = [
+            p
+            for p in self.state.alive_players
+            if self.state.roles.get(p) == Role.WEREWOLF
+        ]
+
+        # God roles: Seer, Witch, Guardian, Hunter
+        gods_alive = [
+            p
+            for p in self.state.alive_players
+            if self.state.roles.get(p)
+            in [Role.SEER, Role.WITCH, Role.GUARDIAN, Role.HUNTER]
+        ]
+
+        # Regular villagers
+        civilians_alive = [
+            p
+            for p in self.state.alive_players
+            if self.state.roles.get(p) == Role.VILLAGER
+        ]
+
+        # Villagers win if all werewolves are eliminated
+        if len(werewolves_alive) == 0:
             return True, "villagers"
-        if werewolves_alive >= villagers_alive:
+
+        # Werewolf victory conditions based on game type
+        total_players = len(self.state.players)
+
+        if total_players == 6:
+            # 6-player: Must eliminate ALL civilians AND gods
+            if len(civilians_alive) == 0 and len(gods_alive) == 0:
+                return True, "werewolves"
+        else:
+            # 9 and 12-player: Eliminate all civilians OR all gods
+            if len(civilians_alive) == 0 or len(gods_alive) == 0:
+                return True, "werewolves"
+
+        # Traditional fallback: werewolves >= good players
+        if len(werewolves_alive) >= len(civilians_alive) + len(gods_alive):
             return True, "werewolves"
+
         return False, ""
 
     def to_dict(self) -> Dict[str, Any]:

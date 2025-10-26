@@ -124,7 +124,6 @@ def main():
         model_config_name=model_to_use,
         game_type=args.game_type,
         max_rounds=args.rounds,
-        discussion_rounds=args.discuss,
         verbose=args.verbose,
     )
 
@@ -138,6 +137,9 @@ def main():
     for p, r in summary["roles"].items():
         status = "ALIVE" if p in summary["survivors"] else "DEAD"
         print(f"  - {p}: {r} ({status})")
+
+    # Log file was written in real-time during the game
+    print(f"\nComplete game transcript saved to: {orchestrator.log_file}")
 
 
 if __name__ == "__main__":
