@@ -26,15 +26,15 @@ from werewolf.config import MODEL_CONFIGS
 
 def ensure_directories():
     """Ensure required directories exist"""
-    os.makedirs("strategies", exist_ok=True)
-    os.makedirs("game_logs", exist_ok=True)
-    os.makedirs("reviews", exist_ok=True)
-    os.makedirs("training_progress", exist_ok=True)
+    os.makedirs(os.path.join(".training", "strategies"), exist_ok=True)
+    os.makedirs(os.path.join(".training", "game_logs"), exist_ok=True)
+    os.makedirs(os.path.join(".training", "reviews"), exist_ok=True)
+    os.makedirs(os.path.join(".training", "progress"), exist_ok=True)
 
 
 def load_training_progress() -> Dict[str, Any]:
     """Load training progress metadata"""
-    progress_file = "training_progress/progress.json"
+    progress_file = os.path.join(".training", "progress", "progress.json")
     if os.path.exists(progress_file):
         with open(progress_file, "r", encoding="utf-8") as f:
             return json.load(f)
@@ -47,7 +47,7 @@ def load_training_progress() -> Dict[str, Any]:
 
 def save_training_progress(progress: Dict[str, Any]):
     """Save training progress metadata"""
-    progress_file = "training_progress/progress.json"
+    progress_file = os.path.join(".training", "progress", "progress.json")
     progress["last_updated"] = datetime.datetime.now().isoformat()
     with open(progress_file, "w", encoding="utf-8") as f:
         json.dump(progress, f, indent=2, ensure_ascii=False)
@@ -104,7 +104,7 @@ def run_single_game(
             ]
 
     try:
-        # Create orchestrator (will auto-load strategies from ./strategies/)
+        # Create orchestrator (will auto-load strategies from .training/strategies/)
         orchestrator = WerewolfGameOrchestrator(
             player_names=player_names,
             model_config_name=model_config_name,
@@ -320,10 +320,10 @@ def run_training(
         print(
             f"Average rounds per game: {stats['total_rounds'] / (stats['werewolf_wins'] + stats['villager_wins'] + stats['draws']):.2f}"
         )
-    print(f"\nProgress saved to: training_progress/progress.json")
-    print(f"Strategies saved to: strategies/")
-    print(f"Game logs saved to: game_logs/")
-    print(f"Reviews saved to: reviews/")
+    print(f"\nProgress saved to: .training/progress/progress.json")
+    print(f"Strategies saved to: .training/strategies/")
+    print(f"Game logs saved to: .training/game_logs/")
+    print(f"Reviews saved to: .training/reviews/")
     print(f"{'='*70}\n")
 
     # Save final progress

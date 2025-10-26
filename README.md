@@ -87,9 +87,9 @@ python run_game.py
 
 游戏结束后会自动：
 
-- 保存完整日志到 `game_logs/`
-- 生成复盘分析到 `reviews/`
-- 更新角色策略到 `strategies/`
+- 保存完整日志到 `.training/game_logs/`
+- 生成复盘分析到 `.training/reviews/`
+- 更新角色策略到 `.training/strategies/`
 
 ### 批量训练（推荐）
 
@@ -112,24 +112,24 @@ python run_selfplay.py -v                  # 详细输出每局过程
 - ✅ **可中断恢复**：按 `Ctrl+C` 中断后，下次运行自动从上次进度继续
 - ✅ **并行加速**：使用 `-p N` 参数同时运行多局游戏
 - ✅ **策略持久化**：每局后自动保存和加载最新策略
-- ✅ **自动备份**：更新策略前自动备份到 `strategies/backups/`，可随时恢复旧版本
-- ✅ **进度追踪**：训练元数据保存在 `training_progress/progress.json`
+- ✅ **自动备份**：更新策略前自动备份到 `.training/strategies/backups/`，可随时恢复旧版本
+- ✅ **进度追踪**：训练元数据保存在 `.training/progress/progress.json`
 
 **查看训练结果：**
 
 ```powershell
 # 查看当前策略
-cat strategies/werewolf.json
-cat strategies/seer.json
+cat .training/strategies/werewolf.json
+cat .training/strategies/seer.json
 
 # 查看策略历史版本
-ls strategies/backups/
+ls .training/strategies/backups/
 
 # 恢复旧版本策略
-Copy-Item strategies/backups/werewolf_20251026_120000.json strategies/werewolf.json
+Copy-Item .training/strategies/backups/werewolf_20251026_120000.json .training/strategies/werewolf.json
 
 # 查看最新复盘
-ls reviews/ | sort -r | select -first 1
+ls .training/reviews/ | sort -r | select -first 1
 ```
 
 ## 📁 项目结构

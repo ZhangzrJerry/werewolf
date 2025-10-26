@@ -60,12 +60,12 @@ class WerewolfGameOrchestrator:
         import datetime
         import os
 
-        # Create logs directory if it doesn't exist
-        log_dir = "game_logs"
-        if not os.path.exists(log_dir):
-            os.makedirs(log_dir)
-
+        # Determine log file path
         if log_file is None:
+            # Create logs directory if using default path
+            log_dir = os.path.join(".training", "game_logs")
+            if not os.path.exists(log_dir):
+                os.makedirs(log_dir)
             timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
             log_file = os.path.join(log_dir, f"werewolf_game_{timestamp}.txt")
         self.log_file = log_file

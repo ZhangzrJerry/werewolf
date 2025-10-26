@@ -29,7 +29,7 @@ htmlcov/
 *.log
 .env
 .env.local
-# Game logs
 
-game_logs/
-werewolf_game_*.txt
+# Training data directory (generated content)
+.training/
+

@@ -98,7 +98,7 @@ Output JSON only: {{ role: [rules...] }}
 
 class StrategyManager:
     def __init__(self, root: str = None) -> None:
-        self.root = root or os.path.join(os.getcwd(), "strategies")
+        self.root = root or os.path.join(os.getcwd(), ".training", "strategies")
         self.backup_root = os.path.join(self.root, "backups")
         os.makedirs(self.root, exist_ok=True)
         os.makedirs(self.backup_root, exist_ok=True)
@@ -175,7 +175,7 @@ def run_learning_pipeline(
 
     # Prepare output dir
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-    review_dir = os.path.join(os.getcwd(), "reviews", timestamp)
+    review_dir = os.path.join(os.getcwd(), ".training", "reviews", timestamp)
     os.makedirs(review_dir, exist_ok=True)
 
     reviewer = ReviewAgent(model)
