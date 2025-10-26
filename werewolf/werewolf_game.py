@@ -17,8 +17,8 @@ class Role(Enum):
         return self == Role.WEREWOLF
 
     def get_team(self) -> str:
-        """Get team name: '好人' (good) or '坏人' (werewolf)"""
-        return "坏人" if self.is_werewolf() else "好人"
+        """Get team name: 'good' or 'werewolf'"""
+        return "werewolf" if self.is_werewolf() else "good"
 
 
 class GamePhase(Enum):

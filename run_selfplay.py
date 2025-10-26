@@ -106,7 +106,7 @@ def run_single_game(
     try:
         if verbose:
             print(
-                f"\n[Game {game_num}] 1️⃣  Loading strategy prompts from .training/strategies/"
+                f"\n[Game {game_num}] (1) Loading strategy prompts from .training/strategies/"
             )
 
         # Create orchestrator (will auto-load strategies from .training/strategies/)
@@ -120,20 +120,20 @@ def run_single_game(
 
         if verbose:
             print(
-                f"[Game {game_num}] 2️⃣  Injected prompts into {len(player_names)} agents"
+                f"[Game {game_num}] (2) Injected prompts into {len(player_names)} agents"
             )
-            print(f"[Game {game_num}] 3️⃣  Starting self-play game...")
+            print(f"[Game {game_num}] (3) Starting self-play game...")
 
         # Run game
         winner = orchestrator.run_game()
         summary = orchestrator.get_game_summary()
 
         if verbose:
-            print(f"[Game {game_num}] 4️⃣  Game finished. Winner: {winner}")
+            print(f"[Game {game_num}] (4) Game finished. Winner: {winner}")
             print(
-                f"[Game {game_num}] 5️⃣  LLM reviewing results & optimizing strategies..."
+                f"[Game {game_num}] (5) LLM reviewing results & optimizing strategies..."
             )
-            print(f"[Game {game_num}] 6️⃣  Strategies updated and saved")
+            print(f"[Game {game_num}] (6) Strategies updated and saved")
 
         return {
             "game_num": game_num,
@@ -226,13 +226,13 @@ def run_training(
     print(f"Strategy iterations completed: {progress.get('strategy_iterations', 0)}")
     print(f"Parallel workers: {parallel}")
     print(f"Resume mode: {resume}")
-    print(f"\n📋 Training Loop:")
-    print(f"  1️⃣  Load Strategy Prompts (.training/strategies/)")
-    print(f"  2️⃣  Inject Prompts → Agents")
-    print(f"  3️⃣  Run Self-Play Games")
-    print(f"  4️⃣  Review Results (LLM Analysis)")
-    print(f"  5️⃣  Optimize Strategy Prompts")
-    print(f"  6️⃣  Save & Backup → Next Iteration")
+    print(f"\nTraining Loop:")
+    print(f"  1)  Load Strategy Prompts (.training/strategies/)")
+    print(f"  2)  Inject Prompts → Agents")
+    print(f"  3)  Run Self-Play Games")
+    print(f"  4)  Review Results (LLM Analysis)")
+    print(f"  5)  Optimize Strategy Prompts")
+    print(f"  6)  Save & Backup → Next Iteration")
     print(f"{'='*70}\n")
 
     # Statistics
@@ -247,9 +247,7 @@ def run_training(
     try:
         if parallel > 1:
             # Parallel execution
-            print(
-                f"🎮 Running {num_games} games in parallel with {parallel} workers...\n"
-            )
+            print(f"Running {num_games} games in parallel with {parallel} workers...\n")
 
             with ProcessPoolExecutor(max_workers=parallel) as executor:
                 # Submit all games
