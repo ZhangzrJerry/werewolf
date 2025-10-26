@@ -217,21 +217,7 @@ class WerewolfGameOrchestrator:
                 agent_actions[seer.name] = target
                 self._log(f"  {seer.name} checks: {target}")
 
-        # Execute night phase in game
-        night_result = self.game.execute_night_phase(agent_actions)
-
-        # Update seer knowledge and log results
-        if "seer_checks" in night_result:
-            for seer_name, checked_role in night_result["seer_checks"].items():
-                target = agent_actions.get(seer_name)
-                if target and seer_name in self.agents:
-                    # Seer learns the actual role for internal tracking
-                    self.agents[seer_name].known_roles[target] = checked_role
-                    # But only announce team (good/bad) in logs for learning
-                    team = checked_role.get_team()
-                    self._log(f"  {seer_name} learned: {target} is {team}")
-
-        # Witch actions (after knowing victim)
+        # 4. Witch actions (collect first, before executing night phase)
         self._log("\n[WITCH] Deciding...")
         witch_agents = [
             agent
@@ -239,8 +225,25 @@ class WerewolfGameOrchestrator:
             if agent.role == Role.WITCH and agent.is_alive
         ]
 
+        # First, temporarily execute to know the werewolf target (but don't commit)
+        # We need to know who the wolves targeted to let witch decide
+        temp_result = {}
+        werewolf_target = None
+
+        # Determine werewolf target from collected actions
+        werewolf_votes = {}
+        for name, target in agent_actions.items():
+            if name in self.agents and self.agents[name].role == Role.WEREWOLF:
+                werewolf_votes[target] = werewolf_votes.get(target, 0) + 1
+
+        if werewolf_votes:
+            max_votes = max(werewolf_votes.values())
+            candidates = [t for t, c in werewolf_votes.items() if c == max_votes]
+            if len(candidates) == 1:
+                werewolf_target = candidates[0]
+
         for witch in witch_agents:
-            victim = night_result.get("werewolf_target")
+            victim = werewolf_target
             context = self._get_game_context()
 
             # Decide on antidote
@@ -262,9 +265,19 @@ class WerewolfGameOrchestrator:
                 else:
                     self._log(f"  {witch.name} does not use poison")
 
-        # Re-execute with witch actions
-        if any(w.role == Role.WITCH and w.is_alive for w in self.agents.values()):
-            night_result = self.game.execute_night_phase(agent_actions)
+        # NOW execute night phase ONCE with all collected actions
+        night_result = self.game.execute_night_phase(agent_actions)
+
+        # Update seer knowledge and log results
+        if "seer_checks" in night_result:
+            for seer_name, checked_role in night_result["seer_checks"].items():
+                target = agent_actions.get(seer_name)
+                if target and seer_name in self.agents:
+                    # Seer learns the actual role for internal tracking
+                    self.agents[seer_name].known_roles[target] = checked_role
+                    # But only announce team (good/bad) in logs for learning
+                    team = checked_role.get_team()
+                    self._log(f"  {seer_name} learned: {target} is {team}")
 
         # Record kill result for werewolves
         victim = night_result.get("werewolf_target")
