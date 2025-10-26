@@ -58,7 +58,7 @@ MODEL_CONFIGS = [
         "generate_args": {
             "temperature": 0.7,
             "max_tokens": 500,
-            "stream": False,  # Disable streaming
+            "stream": True,  # Enable streaming to avoid stream_options error
         },
     },
     {

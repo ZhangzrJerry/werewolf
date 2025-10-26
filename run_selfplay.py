@@ -174,7 +174,7 @@ def run_training(
     3. Run self-play games
     4. Review game results with LLM
     5. Optimize strategy prompts based on review
-    6. Save updated prompts → repeat
+    6. Save updated prompts -> repeat
 
     Args:
         num_games: Number of games to run
@@ -207,13 +207,15 @@ def run_training(
             model_type = config.get("model_type", "")
             model_name = config.get("model_name", "")
             if model_type == "dashscope_chat":
-                model_display = f"通义千问 ({model_name})"
+                model_display = f"Qwen ({model_name})"
             elif model_type == "openai_chat":
                 model_display = f"OpenAI ({model_name})"
             elif model_type == "ollama_chat":
                 model_display = f"Ollama ({model_name})"
+            elif model_type == "deepseek_chat":
+                model_display = f"DeepSeek ({model_name})"
             elif model_type == "modelscope_chat":
-                model_display = f"魔搭 ModelScope ({model_name})"
+                model_display = f"ModelScope ({model_name})"
             break
 
     print(f"\n{'='*70}")
@@ -228,11 +230,11 @@ def run_training(
     print(f"Resume mode: {resume}")
     print(f"\nTraining Loop:")
     print(f"  1)  Load Strategy Prompts (.training/strategies/)")
-    print(f"  2)  Inject Prompts → Agents")
+    print(f"  2)  Inject Prompts -> Agents")
     print(f"  3)  Run Self-Play Games")
     print(f"  4)  Review Results (LLM Analysis)")
     print(f"  5)  Optimize Strategy Prompts")
-    print(f"  6)  Save & Backup → Next Iteration")
+    print(f"  6)  Save & Backup -> Next Iteration")
     print(f"{'='*70}\n")
 
     # Statistics
