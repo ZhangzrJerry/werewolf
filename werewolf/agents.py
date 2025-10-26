@@ -8,11 +8,17 @@ adequate for unit tests that don't actually invoke models.
 """
 
 from typing import Dict, List, Any, Optional
+import asyncio
 
 # Optional AgentScope import with graceful fallback for environments without it
 try:
     from agentscope.agent import AgentBase  # type: ignore
     from agentscope.message import Msg  # type: ignore
+    from agentscope.model import (  # type: ignore
+        OpenAIChatModel,
+        DashScopeChatModel,
+        OllamaChatModel,
+    )
 
     _AGENTSCOPE_AVAILABLE = True
 except Exception:  # pragma: no cover
@@ -28,6 +34,15 @@ except Exception:  # pragma: no cover
 
             return _Resp()
 
+    class OpenAIChatModel:  # stub
+        pass
+
+    class DashScopeChatModel:  # stub
+        pass
+
+    class OllamaChatModel:  # stub
+        pass
+
     class Msg:
         def __init__(self, name: str, content: str, role: str = "user") -> None:
             self.name = name
@@ -36,6 +51,82 @@ except Exception:  # pragma: no cover
 
 
 from .WerewolfGame import Role, GamePhase
+
+
+def _extract_text_content(response):
+    """Extract text content from AgentScope model response
+
+    Args:
+        response: ModelResponse object from AgentScope model
+
+    Returns:
+        str: Extracted text content
+    """
+    content = response.content
+    if isinstance(content, list):
+        # Content blocks - extract text
+        text_parts = []
+        for block in content:
+            if isinstance(block, str):
+                text_parts.append(block)
+            elif isinstance(block, dict) and "text" in block:
+                # Handle dict format like {'type': 'text', 'text': '...'}
+                text_parts.append(block["text"])
+            elif hasattr(block, "text"):
+                text_parts.append(block.text)
+            else:
+                text_parts.append(str(block))
+        return " ".join(text_parts)
+    elif isinstance(content, str):
+        return content
+    else:
+        return str(content)
+
+
+def _run_model_sync(model, msg_list):
+    """Synchronous wrapper for async model calls
+
+    Args:
+        model: The AgentScope model instance
+        msg_list: List of Msg objects to send to the model
+    """
+    try:
+        # Get or create event loop
+        loop = asyncio.get_event_loop()
+    except RuntimeError:
+        # No event loop in current thread, create a new one
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+
+    # Convert Msg objects to dict format expected by model
+    # AgentScope 1.0 models expect list of dicts with 'role' and 'content'
+    messages = []
+    for msg in msg_list:
+        if hasattr(msg, "to_dict"):
+            msg_dict = msg.to_dict()
+            messages.append({"role": msg_dict["role"], "content": msg_dict["content"]})
+        else:
+            # Fallback for dict input
+            messages.append(msg)
+
+    # Run the async model call synchronously
+    # Note: stream setting should be in model's generate_kwargs config
+    import inspect
+
+    response = loop.run_until_complete(model(messages))
+
+    # Check if response is async generator (stream=True case)
+    if inspect.isasyncgen(response):
+        # Consume the generator to get the final response
+        async def consume_stream():
+            final_response = None
+            async for chunk in response:
+                final_response = chunk
+            return final_response
+
+        response = loop.run_until_complete(consume_stream())
+
+    return response
 
 
 class WerewolfAgentBase(AgentBase):
@@ -57,17 +148,69 @@ class WerewolfAgentBase(AgentBase):
         self.memory_history: List[Dict[str, Any]] = []
         self.sys_prompt = sys_prompt or self._get_default_sys_prompt()
 
-        # Initialize model
-        try:
-            super().__init__(
-                name=name,
-                model_config_name=model_config_name,
-                sys_prompt=self.sys_prompt,
-                **kwargs,
-            )
-        except Exception:
-            # Fallback when model/agentscope is unavailable or misconfigured
-            self.model_config_name = model_config_name
+        # Initialize model - create model instance directly
+        self.model_config_name = model_config_name
+        from werewolf.config import MODEL_CONFIGS
+
+        model_config = next(
+            (c for c in MODEL_CONFIGS if c["config_name"] == model_config_name), None
+        )
+        if model_config:
+            model_type = model_config.get("model_type", "openai_chat")
+
+            # Prepare parameters for different model types
+            if model_type == "openai_chat":
+                # OpenAI-compatible models (OpenAI, DeepSeek, ModelScope)
+                params = {
+                    "model_name": model_config["model_name"],
+                    "api_key": model_config.get("api_key"),
+                    "organization": model_config.get("organization"),
+                    "generate_kwargs": model_config.get("generate_args", {}),
+                }
+                # base_url goes into client_args for OpenAI models
+                if "base_url" in model_config:
+                    params["client_args"] = {"base_url": model_config["base_url"]}
+                try:
+                    self.model = OpenAIChatModel(
+                        **{k: v for k, v in params.items() if v is not None}
+                    )
+                except Exception as e:
+                    print(f"Warning: Failed to initialize OpenAI model: {e}")
+                    self.model = lambda msg: type("obj", (object,), {"content": ""})()
+
+            elif model_type == "dashscope_chat":
+                params = {
+                    "model_name": model_config["model_name"],
+                    "api_key": model_config.get("api_key"),
+                    "generate_kwargs": model_config.get("generate_args", {}),
+                }
+                try:
+                    self.model = DashScopeChatModel(
+                        **{k: v for k, v in params.items() if v is not None}
+                    )
+                except Exception as e:
+                    print(f"Warning: Failed to initialize DashScope model: {e}")
+                    self.model = lambda msg: type("obj", (object,), {"content": ""})()
+
+            elif model_type == "ollama_chat":
+                params = {
+                    "model_name": model_config["model_name"],
+                    "host": model_config.get("host", "http://localhost:11434"),
+                    "generate_kwargs": model_config.get("generate_args", {}),
+                }
+                try:
+                    self.model = OllamaChatModel(
+                        **{k: v for k, v in params.items() if v is not None}
+                    )
+                except Exception as e:
+                    print(f"Warning: Failed to initialize Ollama model: {e}")
+                    self.model = lambda msg: type("obj", (object,), {"content": ""})()
+            else:
+                # Fallback
+                self.model = lambda msg: type("obj", (object,), {"content": ""})()
+        else:
+            # No config found - create stub
+            self.model = lambda msg: type("obj", (object,), {"content": ""})()
 
     def _get_default_sys_prompt(self) -> str:
         """Get default system prompt based on role"""
@@ -134,8 +277,10 @@ As a villager, analyze the situation and respond. Consider:
 
 Your response:"""
 
-        response = self.model(Msg(name=self.name, content=prompt, role="user"))
-        return response.content
+        response = _run_model_sync(
+            self.model, [Msg(name=self.name, content=prompt, role="user")]
+        )
+        return _extract_text_content(response)
 
     def vote(self, context: str, alive_players: List[str]) -> str:
         """Vote for a player to eliminate"""
@@ -150,8 +295,10 @@ Provide your vote and brief reasoning.
 Format: VOTE: [player_name]
 Reasoning: [your reasoning]"""
 
-        response = self.model(Msg(name=self.name, content=prompt, role="user"))
-        return self._extract_vote(response.content, alive_players)
+        response = _run_model_sync(
+            self.model, [Msg(name=self.name, content=prompt, role="user")]
+        )
+        return self._extract_vote(_extract_text_content(response), alive_players)
 
     def _format_discussion(self, messages: List[Msg]) -> str:
         """Format discussion messages for prompt"""
@@ -213,8 +360,10 @@ As a werewolf PRETENDING to be a villager:
 
 Your response (stay in character as innocent villager):"""
 
-        response = self.model(Msg(name=self.name, content=prompt, role="user"))
-        return response.content
+        response = _run_model_sync(
+            self.model, [Msg(name=self.name, content=prompt, role="user")]
+        )
+        return _extract_text_content(response)
 
     def night_action(
         self, context: str, targets: List[str], team_members: List[str]
@@ -236,8 +385,11 @@ Who should the werewolf team kill tonight? Consider:
 
 Your choice: """
 
-        response = self.model(Msg(name=self.name, content=prompt, role="user"))
-        return self._extract_vote(response.content, targets)
+        response = _run_model_sync(
+            self.model, [Msg(name=self.name, content=prompt, role="user")]
+        )
+        content = _extract_text_content(response)
+        return self._extract_vote(content, targets)
 
     def _format_discussion(self, messages: List[Msg]) -> str:
         if not messages:
@@ -250,6 +402,34 @@ Your choice: """
             if player.upper() in response_upper:
                 return player
         return valid_players[0] if valid_players else ""
+
+    def vote(self, context: str, alive_players: List[str]) -> str:
+        """Vote for a player to eliminate (as werewolf pretending to be villager)"""
+        prompt = f"""Current game context:
+{context}
+
+Alive players: {', '.join(alive_players)}
+
+As a werewolf PRETENDING to be a villager, who should you vote for?
+Consider:
+1. Don't vote for your werewolf allies
+2. Vote for threats or active villagers
+3. Blend in with other voters
+4. Don't draw suspicion to yourself
+
+Format: VOTE: [player_name]
+Reasoning: [your fake reasoning]"""
+
+        response = _run_model_sync(
+            self.model, [Msg(name=self.name, content=prompt, role="user")]
+        )
+        # Filter out werewolf teammates from valid vote options
+        non_werewolf_players = [
+            p for p in alive_players if self.known_roles.get(p) != Role.WEREWOLF
+        ]
+        if not non_werewolf_players:
+            non_werewolf_players = alive_players  # Fallback
+        return self._extract_vote(_extract_text_content(response), non_werewolf_players)
 
 
 class SeerAgent(WerewolfAgentBase):
@@ -298,8 +478,10 @@ Who should you check tonight? Consider:
 
 Your choice:"""
 
-        response = self.model(Msg(name=self.name, content=prompt, role="user"))
-        return self._extract_choice(response.content, targets)
+        response = _run_model_sync(
+            self.model, [Msg(name=self.name, content=prompt, role="user")]
+        )
+        return self._extract_choice(_extract_text_content(response), targets)
 
     def discuss(self, context: str, discussion_history: List[Msg]) -> str:
         """Participate in discussion with knowledge of roles"""
@@ -323,8 +505,10 @@ As the seer, guide the discussion WITHOUT revealing your role too obviously.
 
 Your response:"""
 
-        response = self.model(Msg(name=self.name, content=prompt, role="user"))
-        return response.content
+        response = _run_model_sync(
+            self.model, [Msg(name=self.name, content=prompt, role="user")]
+        )
+        return _extract_text_content(response)
 
     def _format_known_roles(self) -> str:
         if len(self.known_roles) <= 1:
@@ -343,6 +527,40 @@ Your response:"""
         return "\n".join([f"{msg.name}: {msg.content}" for msg in messages[-10:]])
 
     def _extract_choice(self, response: str, valid_players: List[str]) -> str:
+        response_upper = response.upper()
+        for player in valid_players:
+            if player.upper() in response_upper:
+                return player
+        return valid_players[0] if valid_players else ""
+
+    def vote(self, context: str, alive_players: List[str]) -> str:
+        """Vote for a player to eliminate (using seer knowledge)"""
+        known_wolves = [
+            p
+            for p, r in self.known_roles.items()
+            if r == Role.WEREWOLF and p in alive_players
+        ]
+
+        prompt = f"""Current game context:
+{context}
+
+Alive players: {', '.join(alive_players)}
+
+Your knowledge as Seer:
+{self._format_known_roles()}
+
+As the seer, who should you vote for?
+{'Priority: Vote for known werewolves: ' + ', '.join(known_wolves) if known_wolves else 'Vote based on discussion and suspicion.'}
+
+Format: VOTE: [player_name]
+Reasoning: [your reasoning - be careful not to reveal too much seer knowledge]"""
+
+        response = _run_model_sync(
+            self.model, [Msg(name=self.name, content=prompt, role="user")]
+        )
+        return self._extract_vote(_extract_text_content(response), alive_players)
+
+    def _extract_vote(self, response: str, valid_players: List[str]) -> str:
         response_upper = response.upper()
         for player in valid_players:
             if player.upper() in response_upper:
@@ -400,8 +618,10 @@ Consider:
 
 Decision (YES/NO):"""
 
-        response = self.model(Msg(name=self.name, content=prompt, role="user"))
-        decision = "YES" in response.content.upper()
+        response = _run_model_sync(
+            self.model, [Msg(name=self.name, content=prompt, role="user")]
+        )
+        decision = "YES" in _extract_text_content(response).upper()
 
         if decision:
             self.antidote_used = True
@@ -430,12 +650,14 @@ Consider:
 
 Decision: POISON: [player_name] or PASS"""
 
-        response = self.model(Msg(name=self.name, content=prompt, role="user"))
+        response = _run_model_sync(
+            self.model, [Msg(name=self.name, content=prompt, role="user")]
+        )
 
-        if "PASS" in response.content.upper():
+        if "PASS" in _extract_text_content(response).upper():
             return None
 
-        target = self._extract_choice(response.content, targets)
+        target = self._extract_choice(_extract_text_content(response), targets)
         if target:
             self.poison_used = True
         return target
@@ -446,6 +668,56 @@ Decision: POISON: [player_name] or PASS"""
             if player.upper() in response_upper:
                 return player
         return None
+
+    def discuss(self, context: str, discussion_history: List[Msg]) -> str:
+        """Participate in day discussion as witch"""
+        prompt = f"""Current game context:
+{context}
+
+Recent discussion:
+{self._format_discussion(discussion_history)}
+
+As the witch (but pretending to be a regular villager), analyze the situation and respond.
+Consider:
+1. Who seems suspicious and why?
+2. Use your knowledge of who was attacked at night carefully
+3. Don't reveal your role unless absolutely necessary
+
+Your response:"""
+
+        response = _run_model_sync(
+            self.model, [Msg(name=self.name, content=prompt, role="user")]
+        )
+        return _extract_text_content(response)
+
+    def vote(self, context: str, alive_players: List[str]) -> str:
+        """Vote for a player to eliminate"""
+        prompt = f"""Current game context:
+{context}
+
+Alive players: {', '.join(alive_players)}
+
+Based on all discussions and your secret knowledge as the witch, who should be voted out?
+
+Format: VOTE: [player_name]
+Reasoning: [your reasoning]"""
+
+        response = _run_model_sync(
+            self.model, [Msg(name=self.name, content=prompt, role="user")]
+        )
+        return self._extract_vote(_extract_text_content(response), alive_players)
+
+    def _format_discussion(self, messages: List[Msg]) -> str:
+        if not messages:
+            return "No discussion yet."
+        return "\n".join([f"{msg.name}: {msg.content}" for msg in messages[-10:]])
+
+    def _extract_vote(self, response: str, valid_players: List[str]) -> str:
+        response_upper = response.upper()
+        for player in valid_players:
+            if player.upper() in response_upper:
+                return player
+        return valid_players[0] if valid_players else ""
 
 
 class GuardianAgent(WerewolfAgentBase):
@@ -497,12 +769,64 @@ Who should you protect tonight? Consider:
 
 Your choice:"""
 
-        response = self.model(Msg(name=self.name, content=prompt, role="user"))
-        choice = self._extract_choice(response.content, available)
+        response = _run_model_sync(
+            self.model, [Msg(name=self.name, content=prompt, role="user")]
+        )
+        choice = self._extract_choice(_extract_text_content(response), available)
         self.last_protected = choice
         return choice
 
     def _extract_choice(self, response: str, valid_players: List[str]) -> str:
+        response_upper = response.upper()
+        for player in valid_players:
+            if player.upper() in response_upper:
+                return player
+        return valid_players[0] if valid_players else ""
+
+    def discuss(self, context: str, discussion_history: List[Msg]) -> str:
+        """Participate in day discussion as guardian"""
+        prompt = f"""Current game context:
+{context}
+
+Recent discussion:
+{self._format_discussion(discussion_history)}
+
+As the guardian (but pretending to be a regular villager), analyze the situation and respond.
+Consider:
+1. Who seems suspicious and why?
+2. Use your protection knowledge carefully
+3. Don't reveal your role unless absolutely necessary
+
+Your response:"""
+
+        response = _run_model_sync(
+            self.model, [Msg(name=self.name, content=prompt, role="user")]
+        )
+        return _extract_text_content(response)
+
+    def vote(self, context: str, alive_players: List[str]) -> str:
+        """Vote for a player to eliminate"""
+        prompt = f"""Current game context:
+{context}
+
+Alive players: {', '.join(alive_players)}
+
+Based on all discussions and your protection patterns, who should be voted out?
+
+Format: VOTE: [player_name]
+Reasoning: [your reasoning]"""
+
+        response = _run_model_sync(
+            self.model, [Msg(name=self.name, content=prompt, role="user")]
+        )
+        return self._extract_vote(_extract_text_content(response), alive_players)
+
+    def _format_discussion(self, messages: List[Msg]) -> str:
+        if not messages:
+            return "No discussion yet."
+        return "\n".join([f"{msg.name}: {msg.content}" for msg in messages[-10:]])
+
+    def _extract_vote(self, response: str, valid_players: List[str]) -> str:
         response_upper = response.upper()
         for player in valid_players:
             if player.upper() in response_upper:

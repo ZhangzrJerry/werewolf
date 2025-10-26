@@ -44,6 +44,11 @@ class WerewolfGameOrchestrator:
         self.discussion_rounds = discussion_rounds
         self.verbose = verbose
 
+        # Setup logging (must be before _create_agents which uses _log)
+        self.logger = logging.getLogger(__name__)
+        if verbose:
+            self.logger.setLevel(logging.INFO)
+
         # Create agents
         self.agents: Dict[str, WerewolfAgentBase] = {}
         self._create_agents()
@@ -51,11 +56,6 @@ class WerewolfGameOrchestrator:
         # Game state
         self.current_round = 0
         self.discussion_history: List[Msg] = []
-
-        # Setup logging
-        self.logger = logging.getLogger(__name__)
-        if verbose:
-            self.logger.setLevel(logging.INFO)
 
     def _create_agents(self):
         """Create AI agents for each player"""
@@ -94,7 +94,7 @@ class WerewolfGameOrchestrator:
             self._log(f"{'='*60}")
 
             # Night phase
-            self._log("\n🌙 NIGHT PHASE")
+            self._log("\n[NIGHT PHASE]")
             self._run_night_phase()
 
             # Check game end
@@ -104,7 +104,7 @@ class WerewolfGameOrchestrator:
                 return winner
 
             # Day phase
-            self._log("\n☀️ DAY PHASE")
+            self._log("\n[DAY PHASE]")
             self._run_day_phase()
 
             # Check game end
@@ -113,7 +113,7 @@ class WerewolfGameOrchestrator:
                 self._log_game_end(winner)
                 return winner
 
-        self._log("\n⏰ Maximum rounds reached - Game ended in draw")
+        self._log("\n[TIME UP] Maximum rounds reached - Game ended in draw")
         return "draw"
 
     def _run_night_phase(self):
@@ -121,7 +121,7 @@ class WerewolfGameOrchestrator:
         agent_actions: Dict[str, str] = {}
 
         # Werewolf actions
-        self._log("\n🐺 Werewolves choosing target...")
+        self._log("\n[WEREWOLVES] Choosing target...")
         werewolf_agents = [
             agent
             for agent in self.agents.values()
@@ -147,7 +147,7 @@ class WerewolfGameOrchestrator:
                     self._log(f"  {wolf.name} targets: {target}")
 
         # Seer actions
-        self._log("\n🔮 Seer checking...")
+        self._log("\n[SEER] Checking...")
         seer_agents = [
             agent
             for agent in self.agents.values()
@@ -163,7 +163,7 @@ class WerewolfGameOrchestrator:
                 self._log(f"  {seer.name} checks: {target}")
 
         # Guardian actions
-        self._log("\n🛡️ Guardian protecting...")
+        self._log("\n[GUARDIAN] Protecting...")
         guardian_agents = [
             agent
             for agent in self.agents.values()
@@ -188,7 +188,7 @@ class WerewolfGameOrchestrator:
                     self.agents[seer_name].known_roles[target] = checked_role
 
         # Witch actions (after knowing victim)
-        self._log("\n🧪 Witch deciding...")
+        self._log("\n[WITCH] Deciding...")
         witch_agents = [
             agent
             for agent in self.agents.values()
@@ -226,7 +226,7 @@ class WerewolfGameOrchestrator:
 
     def _run_day_phase(self):
         """Execute day phase with discussion and voting"""
-        self._log(f"\n💬 Day {self.game.state.day_count + 1} Discussion")
+        self._log(f"\n[DISCUSSION] Day {self.game.state.day_count + 1}")
         self._log(f"Alive players: {', '.join(self.game.state.alive_players)}")
 
         # Discussion rounds
@@ -245,7 +245,7 @@ class WerewolfGameOrchestrator:
                 self._log(f"{agent.name}: {statement[:100]}...")
 
         # Voting
-        self._log("\n🗳️ Voting Phase")
+        self._log("\n[VOTING] Voting Phase")
         agent_votes: Dict[str, str] = {}
 
         alive_agents = [agent for agent in self.agents.values() if agent.is_alive]
@@ -264,10 +264,10 @@ class WerewolfGameOrchestrator:
         # Announce results
         eliminated = day_result.get("eliminated")
         if eliminated:
-            self._log(f"\n⚰️ {eliminated} was eliminated by vote!")
+            self._log(f"\n[ELIMINATED] {eliminated} was eliminated by vote!")
             self._log(f"   Role: {self.game.state.roles[eliminated].value}")
         else:
-            self._log("\n🤝 No one was eliminated (tie vote)")
+            self._log("\n[TIE] No one was eliminated (tie vote)")
 
     def _update_agents_after_night(self, night_result: Dict[str, Any]):
         """Update agent states after night phase"""
@@ -288,7 +288,7 @@ class WerewolfGameOrchestrator:
         saved = night_result.get("saved")
         poisoned = night_result.get("poisoned")
 
-        self._log("\n📰 Morning Announcement:")
+        self._log("\n[MORNING] Announcement:")
 
         deaths = []
         for player in self.game.player_names:
@@ -301,9 +301,9 @@ class WerewolfGameOrchestrator:
 
         if deaths:
             for dead in deaths:
-                self._log(f"  💀 {dead} died during the night")
+                self._log(f"  [DEAD] {dead} died during the night")
         else:
-            self._log("  ✨ Everyone survived the night!")
+            self._log("  [SAFE] Everyone survived the night!")
 
     def _get_game_context(self) -> str:
         """Generate context string for agents"""
@@ -329,11 +329,13 @@ Recent Events:
         self._log("\n" + "=" * 60)
         self._log("GAME OVER")
         self._log("=" * 60)
-        self._log(f"🏆 Winner: {winner.upper()}")
+        self._log(f"[WINNER] {winner.upper()}")
         self._log(f"Rounds played: {self.current_round}")
-        self._log(f"\n📊 Final Roles:")
+        self._log(f"\n[FINAL ROLES]")
         for player, role in self.game.state.roles.items():
-            status = "💀" if player not in self.game.state.alive_players else "✅"
+            status = (
+                "[DEAD]" if player not in self.game.state.alive_players else "[ALIVE]"
+            )
             self._log(f"  {status} {player}: {role.value}")
 
     def get_game_summary(self) -> Dict[str, Any]:
