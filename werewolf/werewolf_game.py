@@ -12,6 +12,14 @@ class Role(Enum):
     HUNTER = "hunter"
     GUARDIAN = "guardian"
 
+    def is_werewolf(self) -> bool:
+        """Check if this role is on the werewolf team"""
+        return self == Role.WEREWOLF
+
+    def get_team(self) -> str:
+        """Get team name: '好人' (good) or '坏人' (werewolf)"""
+        return "坏人" if self.is_werewolf() else "好人"
+
 
 class GamePhase(Enum):
     NIGHT = "night"

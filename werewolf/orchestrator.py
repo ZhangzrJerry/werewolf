@@ -10,6 +10,7 @@ from agentscope.message import Msg
 
 from .werewolf_game import WerewolfGame, Role, GamePhase
 from .agents import create_agent, WerewolfAgentBase, WerewolfAgent
+from .learning_engine import StrategyManager, run_learning_pipeline
 
 
 class WerewolfGameOrchestrator:
@@ -88,9 +89,14 @@ class WerewolfGameOrchestrator:
 
     def _create_agents(self):
         """Create AI agents for each player"""
+        strategy_manager = StrategyManager()
         for player_name in self.game.player_names:
             role = self.game.state.roles[player_name]
-            agent = create_agent(player_name, role, self.model_config_name)
+            # Load persisted strategy rules for this role, if any
+            rules = strategy_manager.load_rules_for_role(role.value)
+            agent = create_agent(
+                player_name, role, self.model_config_name, strategy_rules=rules
+            )
             self.agents[player_name] = agent
 
         # Share werewolf team information
@@ -209,12 +215,16 @@ class WerewolfGameOrchestrator:
         # Execute night phase in game
         night_result = self.game.execute_night_phase(agent_actions)
 
-        # Update seer knowledge
+        # Update seer knowledge and log results
         if "seer_checks" in night_result:
             for seer_name, checked_role in night_result["seer_checks"].items():
                 target = agent_actions.get(seer_name)
                 if target and seer_name in self.agents:
+                    # Seer learns the actual role for internal tracking
                     self.agents[seer_name].known_roles[target] = checked_role
+                    # But only announce team (good/bad) in logs for learning
+                    team = checked_role.get_team()
+                    self._log(f"  {seer_name} learned: {target} is {team}")
 
         # Witch actions (after knowing victim)
         self._log("\n[WITCH] Deciding...")
@@ -234,6 +244,8 @@ class WerewolfGameOrchestrator:
                 if should_save:
                     agent_actions[witch.name] = "save"
                     self._log(f"  {witch.name} saves {victim}")
+                else:
+                    self._log(f"  {witch.name} does not save {victim}")
 
             # Decide on poison
             if not witch.poison_used:
@@ -242,6 +254,8 @@ class WerewolfGameOrchestrator:
                 if poison_target:
                     agent_actions[witch.name] = f"poison:{poison_target}"
                     self._log(f"  {witch.name} poisons {poison_target}")
+                else:
+                    self._log(f"  {witch.name} does not use poison")
 
         # Re-execute with witch actions
         if any(w.role == Role.WITCH and w.is_alive for w in self.agents.values()):
@@ -454,6 +468,25 @@ Recent Events:
                 "[DEAD]" if player not in self.game.state.alive_players else "[ALIVE]"
             )
             self._log(f"  {status} {player}: {role.value}")
+
+        # After logging, run learning engine to analyze the game and update strategies
+        try:
+            # Pick any agent's model for analysis
+            model_for_learning = None
+            if self.agents:
+                model_for_learning = next(iter(self.agents.values())).model
+            if model_for_learning:
+                review_dir = run_learning_pipeline(
+                    self.log_file,
+                    self.agents,
+                    self.game.state.roles,
+                    model_for_learning,
+                )
+                self._log(f"\n[LEARNING] Reviews and lessons saved to: {review_dir}")
+            else:
+                self._log("\n[LEARNING] Skipped (no model available)")
+        except Exception as e:
+            self._log(f"\n[LEARNING] Failed: {e}")
 
     def get_game_summary(self) -> Dict[str, Any]:
         """Get complete game summary"""

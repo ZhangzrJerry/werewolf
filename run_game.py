@@ -44,7 +44,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--game-type",
         choices=["six", "nine", "twelve"],
-        default=GAME_CONFIG.get("game_type", "six"),
+        default=GAME_CONFIG.get("game_type", "nine"),
         help="Preset role distribution",
     )
     parser.add_argument(

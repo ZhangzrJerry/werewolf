@@ -147,6 +147,8 @@ class WerewolfAgentBase(AgentBase):
         self.known_roles: Dict[str, Role] = {name: role}
         self.memory_history: List[Dict[str, Any]] = []
         self.sys_prompt = sys_prompt or self._get_default_sys_prompt()
+        # Strategy rules injected by Learning Engine to guide behavior per role
+        self.strategy_rules: List[str] = []
 
         # Initialize model - create model instance directly
         self.model_config_name = model_config_name
@@ -211,6 +213,24 @@ class WerewolfAgentBase(AgentBase):
         else:
             # No config found - create stub
             self.model = lambda msg: type("obj", (object,), {"content": ""})()
+
+    # Strategy API
+    def set_strategy_rules(self, rules: List[str]):
+        """Replace current strategy rules with new ones"""
+        self.strategy_rules = [r.strip() for r in rules if r and r.strip()]
+
+    def add_strategy_rules(self, rules: List[str]):
+        """Append additional strategy rules, de-duplicated"""
+        current = set(self.strategy_rules)
+        for r in rules:
+            if r and r.strip() and r.strip() not in current:
+                self.strategy_rules.append(r.strip())
+                current.add(r.strip())
+
+    def _format_strategy_rules(self) -> str:
+        if not self.strategy_rules:
+            return "(none)"
+        return "\n".join([f"- {r}" for r in self.strategy_rules])
 
     def _get_default_sys_prompt(self) -> str:
         """Get default system prompt based on role"""
@@ -299,6 +319,9 @@ Communication Style:
 Recent discussion:
 {self._format_discussion(discussion_history)}
 
+Strategy guidelines for your role:
+{self._format_strategy_rules()}
+
 As a villager, speak naturally about what you think. Talk like a real person in a conversation, not like you're writing a report. Share your thoughts, suspicions, and questions in 2-4 sentences.
 
 IMPORTANT: Just provide your statement directly. Do NOT start with your name.
@@ -316,6 +339,9 @@ Your statement:"""
 {context}
 
 Alive players: {', '.join(alive_players)}
+
+Strategy guidelines for your role:
+{self._format_strategy_rules()}
 
 Based on all discussions and your observations, who should be voted out?
 Provide your vote and brief reasoning.
@@ -380,6 +406,9 @@ CRITICAL: Never reveal you are a werewolf during day discussions!"""
 Recent discussion:
 {self._format_discussion(discussion_history)}
 
+Strategy guidelines for your role:
+{self._format_strategy_rules()}
+
 You're a werewolf pretending to be an innocent villager. Speak naturally like you're in a real conversation - share your thoughts and suspicions in 2-4 sentences, but stay in character and don't reveal you're a werewolf.
 
 IMPORTANT: Just provide your statement directly. Do NOT start with your name.
@@ -402,6 +431,9 @@ Possible targets: {', '.join(targets)}
 
 Context:
 {context}
+
+Strategy guidelines for your role:
+{self._format_strategy_rules()}
 
 Who should the werewolf team kill tonight? Consider:
 1. Who is the biggest threat to werewolves?
@@ -435,6 +467,9 @@ Your choice: """
 {context}
 
 Alive players: {', '.join(alive_players)}
+
+Strategy guidelines for your role:
+{self._format_strategy_rules()}
 
 As a werewolf PRETENDING to be a villager, who should you vote for?
 Consider:
@@ -497,6 +532,9 @@ Context:
 Players you've already checked:
 {self._format_known_roles()}
 
+Strategy guidelines for your role:
+{self._format_strategy_rules()}
+
 Who should you check tonight? Consider:
 1. Most suspicious players from discussions
 2. Players you haven't checked yet
@@ -525,6 +563,9 @@ Recent discussion:
 
 Your knowledge as Seer:
 {self._format_known_roles()}
+
+Strategy guidelines for your role:
+{self._format_strategy_rules()}
 
 You're the seer, but don't reveal it too obviously. Speak naturally like in a conversation (2-4 sentences). Guide others toward suspecting werewolves without being too direct.
 {f'You know these are werewolves: {", ".join(known_wolves)}' if known_wolves else ''}
@@ -576,6 +617,9 @@ Alive players: {', '.join(alive_players)}
 
 Your knowledge as Seer:
 {self._format_known_roles()}
+
+Strategy guidelines for your role:
+{self._format_strategy_rules()}
 
 As the seer, who should you vote for?
 {'Priority: Vote for known werewolves: ' + ', '.join(known_wolves) if known_wolves else 'Vote based on discussion and suspicion.'}
@@ -639,6 +683,9 @@ Context:
 {context}
 
 You have ONE antidote. Should you use it to save {victim}?
+Strategy guidelines for your role:
+{self._format_strategy_rules()}
+
 Consider:
 1. Is {victim} a valuable player?
 2. Could {victim} be the seer or other important role?
@@ -671,6 +718,9 @@ Antidote status: {'USED' if self.antidote_used else 'AVAILABLE'}
 Poison status: AVAILABLE (one-time use)
 
 Should you use your poison tonight? If yes, who?
+Strategy guidelines for your role:
+{self._format_strategy_rules()}
+
 Consider:
 1. Do you have confirmed werewolves?
 2. Is it worth using poison now?
@@ -707,6 +757,9 @@ Recent discussion:
 
 You're the witch but pretending to be a regular villager. Speak naturally like in a conversation (2-4 sentences). Share your thoughts without revealing your role.
 
+Strategy guidelines for your role:
+{self._format_strategy_rules()}
+
 IMPORTANT: Just provide your statement directly. Do NOT start with your name.
 
 Your statement:"""
@@ -724,6 +777,8 @@ Your statement:"""
 Alive players: {', '.join(alive_players)}
 
 Based on all discussions and your secret knowledge as the witch, who should be voted out?
+Strategy guidelines for your role:
+{self._format_strategy_rules()}
 
 Format: VOTE: [player_name]
 Reasoning: [your reasoning]"""
@@ -787,6 +842,9 @@ Available targets: {', '.join(available)}
 Context:
 {context}
 
+Strategy guidelines for your role:
+{self._format_strategy_rules()}
+
 Who should you protect tonight? Consider:
 1. Who is most likely to be targeted?
 2. Who seems like they might be the seer?
@@ -819,6 +877,9 @@ Recent discussion:
 
 You're the guardian but pretending to be a regular villager. Speak naturally like in a conversation (2-4 sentences). Share your thoughts without revealing your role.
 
+Strategy guidelines for your role:
+{self._format_strategy_rules()}
+
 IMPORTANT: Just provide your statement directly. Do NOT start with your name.
 
 Your statement:"""
@@ -836,6 +897,8 @@ Your statement:"""
 Alive players: {', '.join(alive_players)}
 
 Based on all discussions and your protection patterns, who should be voted out?
+Strategy guidelines for your role:
+{self._format_strategy_rules()}
 
 Format: VOTE: [player_name]
 Reasoning: [your reasoning]"""
@@ -901,6 +964,9 @@ Game Context:
 Alive Players: {', '.join(alive_players)}
 
 You can shoot ONE player before you die. Who do you choose?
+Strategy guidelines for your role:
+{self._format_strategy_rules()}
+
 Consider:
 1. Shoot suspected werewolves
 2. Use information from discussions
@@ -930,6 +996,9 @@ Recent discussion:
 
 You're the hunter but pretending to be a regular villager. Speak naturally like in a conversation (2-4 sentences). Share your thoughts without revealing your role.
 
+Strategy guidelines for your role:
+{self._format_strategy_rules()}
+
 IMPORTANT: Just provide your statement directly. Do NOT start with your name.
 
 Your statement:"""
@@ -947,6 +1016,8 @@ Your statement:"""
 Alive players: {', '.join(alive_players)}
 
 Based on all discussions, who should be voted out?
+Strategy guidelines for your role:
+{self._format_strategy_rules()}
 
 Format: VOTE: [player_name]
 Reasoning: [your reasoning]"""
@@ -969,7 +1040,12 @@ Reasoning: [your reasoning]"""
         return valid_players[0] if valid_players else ""
 
 
-def create_agent(name: str, role: Role, model_config_name: str) -> WerewolfAgentBase:
+def create_agent(
+    name: str,
+    role: Role,
+    model_config_name: str,
+    strategy_rules: List[str] | None = None,
+) -> WerewolfAgentBase:
     """Factory function to create appropriate agent based on role"""
     agent_classes = {
         Role.VILLAGER: VillagerAgent,
@@ -981,4 +1057,7 @@ def create_agent(name: str, role: Role, model_config_name: str) -> WerewolfAgent
     }
 
     agent_class = agent_classes.get(role, VillagerAgent)
-    return agent_class(name=name, role=role, model_config_name=model_config_name)
+    agent = agent_class(name=name, role=role, model_config_name=model_config_name)
+    if strategy_rules:
+        agent.set_strategy_rules(strategy_rules)
+    return agent
