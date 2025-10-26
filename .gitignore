@@ -28,4 +28,4 @@ htmlcov/
 # Misc
 *.log
 .env
-.env.local
+.env.local*.pyc
