@@ -61,7 +61,7 @@
 
 #### 代码结构
 
-- `werewolf/WerewolfGame.py`：
+- `werewolf/werewolf_game.py`：
 
   - 添加`death_records`到`GameState`
   - 更新`check_game_end()`胜利判定逻辑

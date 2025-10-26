@@ -3,7 +3,7 @@ Werewolf Game Package
 A multi-agent werewolf game implementation using AgentScope.
 """
 
-from .WerewolfGame import WerewolfGame, Role, GamePhase, GameState
+from .werewolf_game import WerewolfGame, Role, GamePhase, GameState
 
 # Export agent classes without forcing AgentScope at package import time
 from .agents import (

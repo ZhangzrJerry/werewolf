@@ -5,7 +5,7 @@ Unit tests for WerewolfGame class
 import unittest
 from unittest.mock import patch
 from werewolf import WerewolfGame
-from werewolf.WerewolfGame import Role, GamePhase
+from werewolf.werewolf_game import Role, GamePhase
 
 
 class TestWerewolfGameInit(unittest.TestCase):

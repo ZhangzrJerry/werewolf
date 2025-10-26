@@ -105,7 +105,7 @@ pytest -q
 werewolf/
 ├── werewolf/
 │   ├── __init__.py           # 包导出
-│   ├── WerewolfGame.py       # 规则与状态机（不依赖 LLM）
+│   ├── werewolf_game.py      # 规则与状态机（不依赖 LLM）
 │   ├── agents.py             # 智能体实现（对 AgentScope 软依赖，测试环境可用 stub）
 │   ├── orchestrator.py       # 多智能体编排器（讨论/投票/夜间行动）
 │   └── config.py             # 模型与游戏配置（默认模型、API Key）

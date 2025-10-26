@@ -50,7 +50,7 @@ except Exception:  # pragma: no cover
             self.role = role
 
 
-from .WerewolfGame import Role, GamePhase
+from .werewolf_game import Role, GamePhase
 
 
 def _extract_text_content(response):

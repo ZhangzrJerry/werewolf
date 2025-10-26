@@ -12,7 +12,7 @@ from werewolf.agents import (
     GuardianAgent,
     create_agent,
 )
-from werewolf.WerewolfGame import Role
+from werewolf.werewolf_game import Role
 
 
 class TestAgentCreation(unittest.TestCase):

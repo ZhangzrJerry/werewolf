@@ -8,7 +8,7 @@ from typing import Dict, List, Any, Optional
 
 from agentscope.message import Msg
 
-from .WerewolfGame import WerewolfGame, Role, GamePhase
+from .werewolf_game import WerewolfGame, Role, GamePhase
 from .agents import create_agent, WerewolfAgentBase, WerewolfAgent
 
 
