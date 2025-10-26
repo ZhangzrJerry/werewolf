@@ -203,6 +203,84 @@ class TestReviewAgent(unittest.TestCase):
         self.assertIsNotNone(agent)
         self.assertEqual(agent.model, mock_model)
 
+    def test_analyze_transcript_with_valid_json(self):
+        """Test analyzing transcript with valid JSON response"""
+        mock_model = Mock()
+
+        # Mock model response with valid JSON
+        mock_response = Mock()
+        mock_response.content = json.dumps(
+            {
+                "per_player": {
+                    "Alice": "Alice played well as seer",
+                    "Bob": "Bob was aggressive as werewolf",
+                },
+                "overall": "Good game overall with strategic plays",
+                "lessons": {
+                    "Seer": ["Check suspicious players first", "Share info carefully"],
+                    "Werewolf": ["Avoid being too aggressive"],
+                },
+            }
+        )
+
+        with patch(
+            "werewolf.learning_engine._run_model_sync", return_value=mock_response
+        ):
+            agent = ReviewAgent(mock_model)
+            roles = {"Alice": Role.SEER, "Bob": Role.WEREWOLF}
+            per_player, overall, lessons = agent.analyze_transcript(
+                "Game transcript", roles, "werewolves"
+            )
+
+            self.assertIn("Alice", per_player)
+            self.assertIn("Bob", per_player)
+            self.assertIn("Good game", overall)
+            self.assertIn("Seer", lessons)
+            self.assertIn("Werewolf", lessons)
+            self.assertEqual(len(lessons["Seer"]), 2)
+
+    def test_analyze_transcript_with_invalid_json(self):
+        """Test analyzing transcript handles invalid JSON gracefully"""
+        mock_model = Mock()
+
+        # Mock model response with invalid JSON
+        mock_response = Mock()
+        mock_response.content = "This is not valid JSON"
+
+        with patch(
+            "werewolf.learning_engine._run_model_sync", return_value=mock_response
+        ):
+            agent = ReviewAgent(mock_model)
+            roles = {"Alice": Role.SEER}
+            per_player, overall, lessons = agent.analyze_transcript(
+                "Game transcript", roles, "villagers"
+            )
+
+            # Should return fallback structure
+            self.assertIsInstance(per_player, dict)
+            self.assertIsInstance(overall, str)
+            self.assertIsInstance(lessons, dict)
+
+    def test_analyze_transcript_includes_winner(self):
+        """Test that analyze_transcript receives winner information"""
+        mock_model = Mock()
+        mock_response = Mock()
+        mock_response.content = json.dumps(
+            {"per_player": {}, "overall": "test", "lessons": {}}
+        )
+
+        with patch(
+            "werewolf.learning_engine._run_model_sync", return_value=mock_response
+        ) as mock_sync:
+            agent = ReviewAgent(mock_model)
+            roles = {"Alice": Role.VILLAGER}
+            agent.analyze_transcript("transcript", roles, "werewolves")
+
+            # Check that winner was included in prompt
+            call_args = mock_sync.call_args
+            prompt = call_args[0][1][0].content
+            self.assertIn("werewolves", prompt.lower())
+
 
 class TestCriticAgent(unittest.TestCase):
     """Tests for CriticAgent (basic structure tests)"""
@@ -213,6 +291,71 @@ class TestCriticAgent(unittest.TestCase):
         agent = CriticAgent(mock_model)
         self.assertIsNotNone(agent)
         self.assertEqual(agent.model, mock_model)
+
+    def test_refine_lessons_with_valid_json(self):
+        """Test refining lessons with valid JSON response"""
+        mock_model = Mock()
+
+        # Mock model response
+        mock_response = Mock()
+        mock_response.content = json.dumps(
+            {
+                "Villager": ["Vote with majority", "Trust confirmed players"],
+                "Werewolf": ["Blend in naturally", "Avoid aggressive behavior"],
+            }
+        )
+
+        with patch(
+            "werewolf.learning_engine._run_model_sync", return_value=mock_response
+        ):
+            agent = CriticAgent(mock_model)
+            input_lessons = {
+                "Villager": ["Rule 1", "Rule 2", "Rule 1"],  # Has duplicate
+                "Werewolf": ["Be careful", "Hide identity"],
+            }
+
+            refined = agent.refine_lessons(input_lessons)
+
+            self.assertIn("Villager", refined)
+            self.assertIn("Werewolf", refined)
+            self.assertEqual(len(refined["Villager"]), 2)
+
+    def test_refine_lessons_with_invalid_json(self):
+        """Test refining lessons handles invalid JSON gracefully"""
+        mock_model = Mock()
+
+        # Mock model response with invalid JSON
+        mock_response = Mock()
+        mock_response.content = "Not valid JSON"
+
+        with patch(
+            "werewolf.learning_engine._run_model_sync", return_value=mock_response
+        ):
+            agent = CriticAgent(mock_model)
+            input_lessons = {"Villager": ["Rule 1"]}
+
+            refined = agent.refine_lessons(input_lessons)
+
+            # Should return original lessons on error
+            self.assertEqual(refined, input_lessons)
+
+    def test_refine_lessons_prompt_includes_input(self):
+        """Test that refine prompt includes input lessons"""
+        mock_model = Mock()
+        mock_response = Mock()
+        mock_response.content = json.dumps({"Seer": ["Rule 1"]})
+
+        with patch(
+            "werewolf.learning_engine._run_model_sync", return_value=mock_response
+        ) as mock_sync:
+            agent = CriticAgent(mock_model)
+            input_lessons = {"Seer": ["Check suspicious players"]}
+            agent.refine_lessons(input_lessons)
+
+            # Check that input lessons were in prompt
+            call_args = mock_sync.call_args
+            prompt = call_args[0][1][0].content
+            self.assertIn("Seer", prompt)
 
 
 if __name__ == "__main__":
