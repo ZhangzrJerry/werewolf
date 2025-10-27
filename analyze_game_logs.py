@@ -68,6 +68,24 @@ def extract_game_info(file_path: str) -> Dict:
         # 提取狼人队伍
         werewolf_team_match = re.search(r"Werewolf team:\s*(.+)", content)
         werewolf_team = werewolf_team_match.group(1) if werewolf_team_match else ""
+        werewolf_names = (
+            [name.strip() for name in werewolf_team.split(",")] if werewolf_team else []
+        )
+
+        # 提取第一轮投票结果
+        first_round_voting = None
+        first_eliminated = None
+        first_eliminated_is_werewolf = False
+
+        # 查找第一轮的投票结果
+        round_1_match = re.search(
+            r"ROUND 1.*?\[ELIMINATED\]\s+([^\s]+)\s+was eliminated",
+            content,
+            re.DOTALL,
+        )
+        if round_1_match:
+            first_eliminated = round_1_match.group(1)
+            first_eliminated_is_werewolf = first_eliminated in werewolf_names
 
         # 从文件名提取时间戳
         filename = os.path.basename(file_path)
@@ -86,7 +104,9 @@ def extract_game_info(file_path: str) -> Dict:
             "rounds": max_round,
             "winner": winner,
             "is_complete": True,
-            "werewolf_count": len(werewolf_team.split(",")) if werewolf_team else 0,
+            "werewolf_count": len(werewolf_names),
+            "first_eliminated": first_eliminated,
+            "first_eliminated_is_werewolf": first_eliminated_is_werewolf,
         }
     except Exception as e:
         print(f"分析文件 {file_path} 时出错: {e}")
@@ -189,6 +209,49 @@ def print_statistics(complete_games: List[Dict], incomplete_games: List[str]):
         print(f"  {winner:15s}: {count:4d} 场 ({percentage:5.1f}%)")
     print()
 
+    # 第一轮投票统计
+    print("-" * 80)
+    print("第一轮投票统计（仅完整游戏）")
+    print("-" * 80)
+
+    games_with_first_vote = [
+        game for game in complete_games if game["first_eliminated"] is not None
+    ]
+    if games_with_first_vote:
+        total_first_votes = len(games_with_first_vote)
+        werewolf_eliminated = sum(
+            1 for game in games_with_first_vote if game["first_eliminated_is_werewolf"]
+        )
+        villager_eliminated = total_first_votes - werewolf_eliminated
+
+        werewolf_percentage = (werewolf_eliminated / total_first_votes) * 100
+        villager_percentage = (villager_eliminated / total_first_votes) * 100
+
+        print(f"第一轮有投票记录的游戏数: {total_first_votes}")
+        print(
+            f"第一轮投中狼人: {werewolf_eliminated:4d} 场 ({werewolf_percentage:5.1f}%)"
+        )
+        print(
+            f"第一轮投中村民: {villager_eliminated:4d} 场 ({villager_percentage:5.1f}%)"
+        )
+        print()
+
+        # 理论概率（九人局有3个狼人）
+        theoretical_werewolf_prob = 3 / 9 * 100  # 33.33%
+        diff = werewolf_percentage - theoretical_werewolf_prob
+        print(f"理论概率（随机投票）: {theoretical_werewolf_prob:.2f}%")
+        print(f"实际概率偏差: {diff:+.2f}%")
+
+        if werewolf_percentage > theoretical_werewolf_prob + 5:
+            print("✓ 第一轮投票准确率明显高于随机猜测")
+        elif werewolf_percentage < theoretical_werewolf_prob - 5:
+            print("✗ 第一轮投票准确率低于随机猜测")
+        else:
+            print("→ 第一轮投票准确率接近随机水平")
+    else:
+        print("没有找到第一轮投票记录")
+    print()
+
 
 def plot_rounds_trend(complete_games: List[Dict], window_size: int = 20):
     """
@@ -278,6 +341,7 @@ def plot_rounds_trend(complete_games: List[Dict], window_size: int = 20):
 
     ax1.grid(True, alpha=0.15, linestyle="--", linewidth=0.5, color="white")
     ax1.set_ylim(0, max(rounds) + 1)
+    ax1.set_xlim(0, len(game_numbers) + 1)
 
     # 设置坐标轴刻度颜色和字体大小
     ax1.tick_params(axis="x", colors="white", labelsize=13, width=1.5)
@@ -324,6 +388,152 @@ def plot_rounds_trend(complete_games: List[Dict], window_size: int = 20):
         print("→ 轮次基本稳定")
 
 
+def plot_first_round_accuracy_trend(complete_games: List[Dict], window_size: int = 20):
+    """
+    绘制第一轮投中狼人的准确率随迭代次数的变化趋势
+    """
+    # 过滤出有第一轮投票记录的游戏
+    games_with_first_vote = [
+        game for game in complete_games if game["first_eliminated"] is not None
+    ]
+
+    if not games_with_first_vote:
+        print("没有第一轮投票数据可以绘图")
+        return
+
+    # 准备数据
+    game_numbers = list(range(1, len(games_with_first_vote) + 1))
+    # 1表示投中狼人，0表示投中村民
+    hit_werewolf = [
+        1 if game["first_eliminated_is_werewolf"] else 0
+        for game in games_with_first_vote
+    ]
+
+    # 计算移动平均准确率（百分比）
+    moving_avg_accuracy = []
+    for i in range(len(hit_werewolf)):
+        start_idx = max(0, i - window_size + 1)
+        window = hit_werewolf[start_idx : i + 1]
+        accuracy = (sum(window) / len(window)) * 100  # 转换为百分比
+        moving_avg_accuracy.append(accuracy)
+
+    # 计算线性回归
+    import numpy as np
+
+    x = np.array(game_numbers)
+    y = np.array(moving_avg_accuracy)
+    coefficients = np.polyfit(x, y, 1)
+    linear_trend = np.poly1d(coefficients)
+    trend_line = linear_trend(x)
+
+    # 创建图表
+    fig, ax1 = plt.subplots(1, 1, figsize=(14, 6), facecolor=COLOR_BACKGROUND)
+    ax1.set_facecolor(COLOR_BACKGROUND)
+
+    # 绘制移动平均线
+    ax1.plot(
+        game_numbers,
+        moving_avg_accuracy,
+        color=COLOR_SECONDARY,
+        linewidth=2.5,
+        label=f"{window_size}场移动平均准确率",
+        alpha=0.9,
+    )
+
+    # 添加线性回归趋势线
+    slope = coefficients[0]
+    ax1.plot(
+        game_numbers,
+        trend_line,
+        color=COLOR_PRIMARY,
+        linestyle="--",
+        linewidth=2.5,
+        label=f"线性回归 (斜率={slope:.4f})",
+        alpha=0.8,
+    )
+
+    # 添加理论随机概率基准线（33.33%）
+    theoretical_prob = 33.33
+    ax1.axhline(
+        y=theoretical_prob,
+        color=COLOR_ACCENT,
+        linestyle=":",
+        linewidth=2,
+        label=f"理论随机概率 ({theoretical_prob:.1f}%)",
+        alpha=0.7,
+    )
+
+    ax1.set_xlabel(
+        "游戏编号（时间顺序）", fontsize=16, fontweight="bold", color="white"
+    )
+    ax1.set_ylabel(
+        "第一轮投中狼人准确率 (%)", fontsize=16, fontweight="bold", color="white"
+    )
+    ax1.set_title(
+        "第一轮投票准确率随迭代次数变化趋势",
+        fontsize=20,
+        fontweight="bold",
+        pad=20,
+        color="white",
+    )
+
+    # 设置图例样式
+    legend = ax1.legend(loc="upper right", fontsize=14, framealpha=0.95)
+    legend.get_frame().set_facecolor(COLOR_BACKGROUND)
+    legend.get_frame().set_edgecolor("white")
+    legend.get_frame().set_linewidth(1.5)
+    for text in legend.get_texts():
+        text.set_color("white")
+
+    ax1.grid(True, alpha=0.15, linestyle="--", linewidth=0.5, color="white")
+    ax1.set_ylim(0, 100)
+    ax1.set_xlim(0, len(game_numbers) + 1)
+
+    # 设置坐标轴刻度颜色和字体大小
+    ax1.tick_params(axis="x", colors="white", labelsize=13, width=1.5)
+    ax1.tick_params(axis="y", colors="white", labelsize=13, width=1.5)
+
+    # 设置坐标轴边框颜色和粗细
+    for spine in ax1.spines.values():
+        spine.set_edgecolor("white")
+        spine.set_alpha(0.5)
+        spine.set_linewidth(1.5)
+
+    plt.tight_layout()
+
+    # 保存图表
+    output_file = "./doc/public/first_round_accuracy_trend.png"
+    plt.savefig(output_file, dpi=150, bbox_inches="tight")
+    print(f"\n第一轮准确率趋势图已保存到: {output_file}")
+
+    plt.show()
+
+    # 计算趋势分析
+    print("\n" + "=" * 80)
+    print("第一轮准确率趋势分析")
+    print("=" * 80)
+
+    # 前1/3 vs 后1/3 对比
+    third = len(hit_werewolf) // 3
+    if third > 0:
+        first_third_accuracy = (sum(hit_werewolf[:third]) / third) * 100
+        last_third_accuracy = (sum(hit_werewolf[-third:]) / third) * 100
+        change = last_third_accuracy - first_third_accuracy
+
+        print(f"前1/3游戏（1-{third}场）准确率: {first_third_accuracy:.2f}%")
+        print(
+            f"后1/3游戏（{len(hit_werewolf)-third+1}-{len(hit_werewolf)}场）准确率: {last_third_accuracy:.2f}%"
+        )
+        print(f"变化: {change:+.2f}%")
+
+        if change > 5:
+            print("✓ 第一轮准确率呈上升趋势，AI在学习改进")
+        elif change < -5:
+            print("✗ 第一轮准确率呈下降趋势")
+        else:
+            print("→ 第一轮准确率基本稳定")
+
+
 def main():
     # 游戏日志目录
     logs_dir = r".\.training\game_logs"
@@ -340,6 +550,7 @@ def main():
     # 绘制趋势图
     if complete_games:
         plot_rounds_trend(complete_games, window_size=20)
+        plot_first_round_accuracy_trend(complete_games, window_size=20)
 
 
 if __name__ == "__main__":
