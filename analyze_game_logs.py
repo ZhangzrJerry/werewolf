@@ -90,21 +90,10 @@ def extract_game_info(file_path: str) -> Dict:
         # 提取女巫毒药使用情况
         witch_poison_target = None
         witch_poison_hit_werewolf = False
+        # 正确的格式是: [WITCH] Deciding...\n    Leo poisons Charlie
         poison_match = re.search(
-            r"\[WITCH\].*?使用毒药.*?目标:\s*([^\s\n]+)", content, re.DOTALL
+            r"\[WITCH\]\s+Deciding\.\.\.\s+\w+\s+poisons\s+(\w+)", content, re.DOTALL
         )
-        if not poison_match:
-            # 尝试另一种格式
-            poison_match = re.search(
-                r"\[WITCH\].*?毒死.*?([^\s\n]+)", content, re.DOTALL
-            )
-        if not poison_match:
-            # 再尝试英文格式
-            poison_match = re.search(
-                r"\[WITCH\].*?poison.*?target:\s*([^\s\n]+)",
-                content,
-                re.DOTALL | re.IGNORECASE,
-            )
 
         if poison_match:
             witch_poison_target = poison_match.group(1)
@@ -114,15 +103,10 @@ def extract_game_info(file_path: str) -> Dict:
         hunter_shot_target = None
         hunter_shot_hit_werewolf = False
 
-        # 查找猎人技能触发
+        # 正确的格式是: [HUNTER SKILL] Ivy activates hunter ability!\n    Ivy shoots Henry!
         hunter_match = re.search(
-            r"\[HUNTER SKILL\].*?([^\s]+)\s+shoots\s+([^\s\n]+)", content, re.DOTALL
+            r"\[HUNTER SKILL\].*?(\w+)\s+shoots\s+(\w+)!", content, re.DOTALL
         )
-        if not hunter_match:
-            # 尝试中文格式
-            hunter_match = re.search(
-                r"\[猎人技能\].*?([^\s]+).*?射杀.*?([^\s\n]+)", content, re.DOTALL
-            )
 
         if hunter_match:
             hunter_shot_target = hunter_match.group(2)
@@ -188,6 +172,11 @@ def analyze_game_logs(logs_dir: str) -> Tuple[List[Dict], List[str]]:
 
     # 按时间排序
     complete_games.sort(key=lambda x: x["timestamp"])
+
+    # 删除最早的30场游戏（可能存在log泄露问题）
+    if len(complete_games) > 30:
+        complete_games = complete_games[30:]
+        print(f"已过滤掉最早的30场游戏，剩余 {len(complete_games)} 场游戏用于分析")
 
     return complete_games, incomplete_games
 
@@ -573,17 +562,6 @@ def plot_first_round_accuracy_trend(complete_games: List[Dict], window_size: int
         alpha=0.8,
     )
 
-    # 添加理论随机概率基准线（33.33%）
-    theoretical_prob = 33.33
-    ax1.axhline(
-        y=theoretical_prob,
-        color=COLOR_ACCENT,
-        linestyle=":",
-        linewidth=2,
-        label=f"理论随机概率 ({theoretical_prob:.1f}%)",
-        alpha=0.7,
-    )
-
     ax1.set_xlabel(
         "游戏编号（时间顺序）", fontsize=16, fontweight="bold", color="white"
     )
@@ -717,17 +695,6 @@ def plot_witch_poison_accuracy_trend(complete_games: List[Dict], window_size: in
         alpha=0.8,
     )
 
-    # 添加理论随机概率基准线
-    theoretical_prob = 33.33
-    ax1.axhline(
-        y=theoretical_prob,
-        color=COLOR_ACCENT,
-        linestyle=":",
-        linewidth=2,
-        label=f"理论随机概率 ({theoretical_prob:.1f}%)",
-        alpha=0.7,
-    )
-
     ax1.set_xlabel(
         "游戏编号（时间顺序）", fontsize=16, fontweight="bold", color="white"
     )
@@ -856,17 +823,6 @@ def plot_hunter_shot_accuracy_trend(complete_games: List[Dict], window_size: int
         linewidth=2.5,
         label=f"线性回归 (斜率={slope:.4f})",
         alpha=0.8,
-    )
-
-    # 添加理论随机概率基准线
-    theoretical_prob = 33.33
-    ax1.axhline(
-        y=theoretical_prob,
-        color=COLOR_ACCENT,
-        linestyle=":",
-        linewidth=2,
-        label=f"理论随机概率 ({theoretical_prob:.1f}%)",
-        alpha=0.7,
     )
 
     ax1.set_xlabel(
