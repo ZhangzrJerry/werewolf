@@ -196,6 +196,7 @@ async function updateState() {
             ? (state.event_index / state.total_events) * 100
             : 0;
         document.getElementById('progress-fill').style.width = progress + '%';
+        document.getElementById('progress-handle').style.left = progress + '%';
         document.getElementById('progress-text').textContent =
             `${state.event_index} / ${state.total_events}`;
 
@@ -397,6 +398,122 @@ function setupEventListeners() {
         if (isPlaying) {
             stopPlaying();
             startPlaying();
+        }
+    });
+
+    // Progress bar drag and click
+    setupProgressBarControls();
+
+    // Keyboard controls
+    setupKeyboardControls();
+}
+
+// Setup progress bar drag and click
+function setupProgressBarControls() {
+    const progressBar = document.getElementById('progress-bar');
+    const progressFill = document.getElementById('progress-fill');
+    const progressHandle = document.getElementById('progress-handle');
+    let isDragging = false;
+
+    // Click to jump
+    progressBar.addEventListener('click', async (e) => {
+        if (isDragging) return;
+
+        const rect = progressBar.getBoundingClientRect();
+        const clickX = e.clientX - rect.left;
+        const percentage = clickX / rect.width;
+
+        // Get current state to know total events
+        const stateResponse = await fetch('/api/state');
+        const state = await stateResponse.json();
+
+        if (state.total_events > 0) {
+            const targetIndex = Math.round(percentage * state.total_events);
+            stopPlaying();
+            await fetch(`/api/jump/${targetIndex}`);
+            await updateState();
+        }
+    });
+
+    // Drag handle
+    progressHandle.addEventListener('mousedown', (e) => {
+        isDragging = true;
+        progressBar.classList.add('dragging');
+        stopPlaying();
+        e.preventDefault();
+    });
+
+    document.addEventListener('mousemove', async (e) => {
+        if (!isDragging) return;
+
+        const rect = progressBar.getBoundingClientRect();
+        let clickX = e.clientX - rect.left;
+
+        // Clamp to bar width
+        clickX = Math.max(0, Math.min(clickX, rect.width));
+        const percentage = clickX / rect.width;
+
+        // Update visual immediately
+        progressFill.style.width = (percentage * 100) + '%';
+        progressHandle.style.left = (percentage * 100) + '%';
+    });
+
+    document.addEventListener('mouseup', async (e) => {
+        if (!isDragging) return;
+
+        isDragging = false;
+        progressBar.classList.remove('dragging');
+
+        const rect = progressBar.getBoundingClientRect();
+        let clickX = e.clientX - rect.left;
+        clickX = Math.max(0, Math.min(clickX, rect.width));
+        const percentage = clickX / rect.width;
+
+        // Get current state to know total events
+        const stateResponse = await fetch('/api/state');
+        const state = await stateResponse.json();
+
+        if (state.total_events > 0) {
+            const targetIndex = Math.round(percentage * state.total_events);
+            await fetch(`/api/jump/${targetIndex}`);
+            await updateState();
+        }
+    });
+}
+
+// Setup keyboard controls
+function setupKeyboardControls() {
+    document.addEventListener('keydown', async (e) => {
+        // Only handle arrow keys when game is loaded
+        const gameContainer = document.getElementById('game-container');
+        if (gameContainer.classList.contains('hidden')) return;
+
+        // Ignore if user is typing in an input field
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+        switch (e.key) {
+            case 'ArrowLeft':
+                e.preventDefault();
+                stopPlaying();
+                await fetch('/api/prev');
+                await updateState();
+                break;
+
+            case 'ArrowRight':
+                e.preventDefault();
+                stopPlaying();
+                await fetch('/api/next');
+                await updateState();
+                break;
+
+            case ' ':
+                e.preventDefault();
+                if (isPlaying) {
+                    stopPlaying();
+                } else {
+                    startPlaying();
+                }
+                break;
         }
     });
 }

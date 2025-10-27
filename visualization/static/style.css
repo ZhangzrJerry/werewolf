@@ -267,12 +267,14 @@ header h1 {
 
 /* Progress Bar */
 .progress-bar {
+    position: relative;
     width: 100%;
-    height: 10px;
+    height: 20px;
     background: #e0e0e0;
-    border-radius: 5px;
-    overflow: hidden;
+    border-radius: 10px;
     margin-bottom: 10px;
+    cursor: pointer;
+    user-select: none;
 }
 
 .progress-fill {
@@ -280,6 +282,41 @@ header h1 {
     background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
     width: 0%;
     transition: width 0.3s;
+    border-radius: 10px;
+    pointer-events: none;
+}
+
+.progress-handle {
+    position: absolute;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 24px;
+    height: 24px;
+    background: white;
+    border: 3px solid #667eea;
+    border-radius: 50%;
+    cursor: grab;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    transition: all 0.2s;
+    z-index: 10;
+}
+
+.progress-handle:hover {
+    transform: translate(-50%, -50%) scale(1.2);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.progress-handle:active {
+    cursor: grabbing;
+    transform: translate(-50%, -50%) scale(1.1);
+}
+
+.progress-bar.dragging .progress-handle {
+    transition: none;
+}
+
+.progress-bar.dragging .progress-fill {
+    transition: none;
 }
 
 .progress-info {
