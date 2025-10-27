@@ -9,6 +9,7 @@
 - 时间: 2025-10-27 00:13:24
 - 结果: WEREWOLVES WIN
 - Review 目录: `.training/reviews/20251027_001324/`
+- Game Log: `.training/game_logs/werewolf_game_20251027_001123_cb85c026.txt`
 
 **情景**：
 
@@ -73,6 +74,7 @@
 - 时间: 2025-10-27 00:38:26
 - 结果: WEREWOLVES WIN
 - Review 目录: `.training/reviews/20251027_003826/`
+- Game Log: `.training/game_logs/werewolf_game_20251027_003809_d32c18c5.txt`
 
 **情景**：
 
@@ -131,6 +133,7 @@
 - 时间: 2025-10-27 00:54:51
 - 结果: VILLAGERS WIN
 - Review 目录: `.training/reviews/20251027_005451/`
+- Game Log: `.training/game_logs/werewolf_game_20251027_005516_4d77013f.txt`
 
 **情景**：
 
@@ -183,6 +186,7 @@
 - 时间: 2025-10-27 01:04:16
 - 结果: VILLAGERS WIN
 - Review 目录: `.training/reviews/20251027_010416/`
+- Game Log: `.training/game_logs/werewolf_game_20251027_010020_34b62258.txt`
 
 **情景**：
 
