@@ -136,11 +136,13 @@ class GameLogParser:
         )
         if werewolf_section:
             targets = {}
-            for line in werewolf_section.group(1).strip().split("\n"):
-                match = re.match(r"  (\w+) targets: (\w+)", line)
-                if match:
-                    werewolf, target = match.groups()
-                    targets[werewolf] = target
+            # Don't use strip() - it removes leading spaces from first line
+            for line in werewolf_section.group(1).split("\n"):
+                if line:  # Skip empty lines
+                    match = re.match(r"  (\w+) targets: (\w+)", line)
+                    if match:
+                        werewolf, target = match.groups()
+                        targets[werewolf] = target
 
             self.events.append(
                 GameEvent(
