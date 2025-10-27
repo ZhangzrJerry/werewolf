@@ -168,11 +168,7 @@ function updatePlayerCards(playerStates) {
 
         // Update role display
         const roleElement = card.querySelector('.player-role');
-        if (state.revealed && state.role !== 'unknown') {
-            roleElement.textContent = roleTranslations[state.role] || state.role;
-        } else {
-            roleElement.textContent = '未知';
-        }
+        roleElement.textContent = roleTranslations[state.role] || state.role;
 
         // Update status
         const statusElement = card.querySelector('.player-status');
@@ -393,12 +389,37 @@ function setupEventListeners() {
         document.getElementById('log-selector').classList.remove('hidden');
     });
 
+    document.getElementById('btn-overview').addEventListener('click', showGameOverview);
+
     document.getElementById('speed-select').addEventListener('change', (e) => {
         playSpeed = parseInt(e.target.value);
         if (isPlaying) {
             stopPlaying();
             startPlaying();
         }
+    });
+
+    // Modal close functionality
+    const modal = document.getElementById('overview-modal');
+    const closeBtn = modal.querySelector('.close');
+    
+    closeBtn.addEventListener('click', () => {
+        modal.style.display = 'none';
+    });
+    
+    window.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            modal.style.display = 'none';
+        }
+    });
+
+    // Tab switching
+    const tabButtons = document.querySelectorAll('.tab-button');
+    tabButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const tabName = button.getAttribute('data-tab');
+            switchTab(tabName);
+        });
     });
 
     // Progress bar drag and click
@@ -544,4 +565,254 @@ function stopPlaying() {
         clearInterval(playInterval);
         playInterval = null;
     }
+}
+
+// Show game overview modal
+async function showGameOverview() {
+    try {
+        const response = await fetch('/api/overview');
+        const overview = await response.json();
+
+        if (overview.error) {
+            alert('获取游戏概览失败: ' + overview.error);
+            return;
+        }
+
+        // Populate overview data
+        populateGameSummary(overview);
+        populatePlayersOverview(overview);
+        populateDeathTimeline(overview);
+        populateVotingHistory(overview);
+        populateSpecialActions(overview);
+
+        // Show modal
+        document.getElementById('overview-modal').style.display = 'block';
+        
+    } catch (error) {
+        console.error('Failed to load game overview:', error);
+        alert('加载游戏概览失败');
+    }
+}
+
+// Switch tabs in overview modal
+function switchTab(tabName) {
+    // Hide all tab contents
+    document.querySelectorAll('.tab-content').forEach(content => {
+        content.classList.remove('active');
+    });
+    
+    // Remove active class from all tab buttons
+    document.querySelectorAll('.tab-button').forEach(button => {
+        button.classList.remove('active');
+    });
+    
+    // Show selected tab content
+    document.getElementById(`tab-${tabName}`).classList.add('active');
+    
+    // Set active tab button
+    document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+}
+
+// Populate game summary tab
+function populateGameSummary(overview) {
+    const resultContent = document.getElementById('game-result-content');
+    const statsContent = document.getElementById('game-stats-content');
+    
+    // Game result
+    const result = overview.final_result;
+    const winnerClass = result.winner === 'WEREWOLVES' ? 'loser' : 'winner'; // From villager perspective
+    
+    resultContent.innerHTML = `
+        <div class="result-card ${winnerClass}">
+            <div class="title">游戏结果</div>
+            <div class="value">${result.winner === 'WEREWOLVES' ? '🐺 狼人胜利' : '👥 村民胜利'}</div>
+        </div>
+        <div class="result-card">
+            <div class="title">游戏回合数</div>
+            <div class="value">${result.rounds_played}</div>
+        </div>
+        <div class="result-card">
+            <div class="title">剩余狼人</div>
+            <div class="value">${result.werewolves_remaining}</div>
+        </div>
+        <div class="result-card">
+            <div class="title">剩余村民</div>
+            <div class="value">${result.villagers_remaining}</div>
+        </div>
+    `;
+    
+    // Game statistics
+    const totalPlayers = Object.keys(overview.players).length;
+    const totalDeaths = overview.death_timeline.length;
+    const totalVotes = overview.voting_history.length;
+    const totalSpecialActions = overview.special_actions.length;
+    
+    statsContent.innerHTML = `
+        <div class="stat-item">
+            <div class="label">总玩家数</div>
+            <div class="value">${totalPlayers}</div>
+        </div>
+        <div class="stat-item">
+            <div class="label">死亡人数</div>
+            <div class="value">${totalDeaths}</div>
+        </div>
+        <div class="stat-item">
+            <div class="label">投票次数</div>
+            <div class="value">${totalVotes}</div>
+        </div>
+        <div class="stat-item">
+            <div class="label">特殊行动</div>
+            <div class="value">${totalSpecialActions}</div>
+        </div>
+        <div class="stat-item">
+            <div class="label">狼人初始数量</div>
+            <div class="value">${Object.values(overview.players).filter(p => p.role === 'werewolf').length}</div>
+        </div>
+        <div class="stat-item">
+            <div class="label">特殊角色数量</div>
+            <div class="value">${Object.values(overview.players).filter(p => !['werewolf', 'villager'].includes(p.role)).length}</div>
+        </div>
+    `;
+}
+
+// Populate players overview tab
+function populatePlayersOverview(overview) {
+    const content = document.getElementById('players-overview-content');
+    
+    let html = '';
+    Object.values(overview.players).forEach(player => {
+        const isWerewolf = player.role === 'werewolf';
+        const isDead = player.final_status === 'dead';
+        const cardClass = `player-overview-card ${isWerewolf ? 'werewolf' : ''} ${isDead ? 'dead' : ''}`;
+        
+        const statusText = isDead ? `死亡 (第${player.death_round}回合, ${player.death_reason})` : '存活';
+        
+        let actionsText = '';
+        if (player.actions_taken.length > 0) {
+            actionsText = `行动: ${player.actions_taken.map(a => `${eventTypeTranslations[a.action] || a.action}(${a.target})`).join(', ')}`;
+        }
+        
+        let votesText = '';
+        if (player.votes_cast.length > 0) {
+            votesText = `投票: ${player.votes_cast.map(v => `R${v.round}→${v.target}`).join(', ')}`;
+        }
+        
+        html += `
+            <div class="${cardClass}">
+                <div class="player-name">${player.name}</div>
+                <div class="player-role">${roleTranslations[player.role] || player.role}</div>
+                <div class="player-status">${statusText}</div>
+                <div class="player-actions">
+                    ${actionsText}<br>
+                    ${votesText}
+                </div>
+            </div>
+        `;
+    });
+    
+    content.innerHTML = html;
+}
+
+// Populate death timeline tab
+function populateDeathTimeline(overview) {
+    const content = document.getElementById('death-timeline-content');
+    
+    if (overview.death_timeline.length === 0) {
+        content.innerHTML = '<p class="no-data">没有玩家死亡记录</p>';
+        return;
+    }
+    
+    let html = '';
+    overview.death_timeline.forEach(death => {
+        html += `
+            <div class="timeline-item">
+                <div class="round-badge">第${death.round}回合</div>
+                <div class="death-info">${death.player} 死亡</div>
+                <div class="death-reason">阶段: ${phaseTranslations[death.phase]} | 原因: ${death.reason}</div>
+            </div>
+        `;
+    });
+    
+    content.innerHTML = html;
+}
+
+// Populate voting history tab
+function populateVotingHistory(overview) {
+    const content = document.getElementById('voting-history-content');
+    
+    if (overview.voting_history.length === 0) {
+        content.innerHTML = '<p class="no-data">没有投票记录</p>';
+        return;
+    }
+    
+    // Group votes by round
+    const votesByRound = {};
+    overview.voting_history.forEach(vote => {
+        if (!votesByRound[vote.round]) {
+            votesByRound[vote.round] = [];
+        }
+        votesByRound[vote.round].push(vote);
+    });
+    
+    let html = '';
+    Object.keys(votesByRound).sort((a, b) => parseInt(a) - parseInt(b)).forEach(round => {
+        const votes = votesByRound[round];
+        html += `
+            <div class="voting-round">
+                <div class="voting-round-header">第${round}回合投票</div>
+                <div class="votes-list">
+        `;
+        
+        votes.forEach(vote => {
+            html += `
+                <div class="vote-item">
+                    <span class="voter">${vote.voter}</span>
+                    <span class="vote-arrow">→</span>
+                    <span class="target">${vote.target}</span>
+                </div>
+            `;
+        });
+        
+        html += `
+                </div>
+            </div>
+        `;
+    });
+    
+    content.innerHTML = html;
+}
+
+// Populate special actions tab
+function populateSpecialActions(overview) {
+    const content = document.getElementById('special-actions-content');
+    
+    if (overview.special_actions.length === 0) {
+        content.innerHTML = '<p class="no-data">没有特殊行动记录</p>';
+        return;
+    }
+    
+    let html = '';
+    overview.special_actions.forEach(action => {
+        const actionClass = action.type.includes('werewolf') ? 'werewolf-action' :
+                           action.type.includes('seer') ? 'seer-action' :
+                           action.type.includes('witch') ? 'witch-action' :
+                           action.type.includes('hunter') ? 'hunter-action' : '';
+        
+        const actionName = eventTypeTranslations[action.type] || action.type;
+        const targetText = action.target ? ` → ${action.target}` : '';
+        const resultText = action.result ? ` (${action.result})` : '';
+        
+        html += `
+            <div class="action-item ${actionClass}">
+                <div class="action-header">
+                    <span class="action-type">${actionName}</span>
+                    <span class="action-round">第${action.round}回合 ${phaseTranslations[action.phase]}</span>
+                </div>
+                <div class="action-details">${action.actor}${targetText}</div>
+                <div class="action-result">${resultText}</div>
+            </div>
+        `;
+    });
+    
+    content.innerHTML = html;
 }

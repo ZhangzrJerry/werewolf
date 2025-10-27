@@ -21,13 +21,13 @@ class GameStateManager:
         self._initialize_player_states()
 
     def _initialize_player_states(self):
-        """Initialize all players as alive with unknown roles"""
+        """Initialize all players as alive with their actual roles"""
         for name, player in self.players.items():
             self.current_player_states[name] = {
                 "name": name,
                 "status": "alive",
-                "role": "unknown",
-                "revealed": False,
+                "role": player.role,  # Use actual role from log instead of "unknown"
+                "revealed": True,     # Show actual roles from the beginning
             }
 
     def get_current_state(self) -> Dict[str, Any]:

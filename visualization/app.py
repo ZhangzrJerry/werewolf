@@ -238,5 +238,152 @@ def api_reset():
     return jsonify(state)
 
 
+@app.route("/api/overview")
+def api_game_overview():
+    """Get comprehensive game overview for quick analysis"""
+    global current_game
+
+    if current_game is None:
+        return jsonify({"error": "No game loaded"}), 400
+
+    # Get the parsed game data
+    game_data = current_game.parsed_data
+
+    # Build comprehensive overview
+    overview = {
+        "game_info": game_data["game_info"],
+        "players": {},
+        "round_summary": [],
+        "death_timeline": [],
+        "voting_history": [],
+        "special_actions": [],
+        "final_result": {},
+    }
+
+    # Enhanced player information
+    for name, player in game_data["players"].items():
+        overview["players"][name] = {
+            "name": player.name,
+            "role": player.role,
+            "final_status": player.status,
+            "death_round": player.death_round,
+            "death_reason": player.death_reason,
+            "actions_taken": [],
+            "votes_cast": [],
+            "votes_received": [],
+        }
+
+    # Analyze all events to build comprehensive timeline
+    current_round = 0
+    current_phase = ""
+    round_events = []
+
+    for event in game_data["events"]:
+        # Track round changes
+        if event.round_num != current_round:
+            if round_events:
+                overview["round_summary"].append(
+                    {"round": current_round, "events": round_events.copy()}
+                )
+            current_round = event.round_num
+            round_events = []
+
+        # Collect round events
+        round_events.append(
+            {"phase": event.phase, "type": event.event_type, "data": event.data}
+        )
+
+        # Track deaths
+        if event.event_type == "death_announcement" and event.data.get("player"):
+            death_info = {
+                "round": event.round_num,
+                "phase": event.phase,
+                "player": event.data["player"],
+                "reason": event.data.get("reason", "unknown"),
+            }
+            overview["death_timeline"].append(death_info)
+
+        # Track voting
+        if (
+            event.event_type == "vote"
+            and event.data.get("voter")
+            and event.data.get("target")
+        ):
+            voter = event.data["voter"]
+            target = event.data["target"]
+
+            vote_info = {"round": event.round_num, "voter": voter, "target": target}
+            overview["voting_history"].append(vote_info)
+
+            # Add to player vote tracking
+            if voter in overview["players"]:
+                overview["players"][voter]["votes_cast"].append(
+                    {"round": event.round_num, "target": target}
+                )
+            if target in overview["players"]:
+                overview["players"][target]["votes_received"].append(
+                    {"round": event.round_num, "voter": voter}
+                )
+
+        # Track special actions
+        if event.event_type in [
+            "werewolf_target",
+            "seer_check",
+            "witch_save",
+            "witch_poison",
+            "hunter_skill",
+        ]:
+            action_info = {
+                "round": event.round_num,
+                "phase": event.phase,
+                "type": event.event_type,
+                "actor": event.data.get("player", "unknown"),
+                "target": event.data.get("target", ""),
+                "result": event.data.get("result", ""),
+            }
+            overview["special_actions"].append(action_info)
+
+            # Add to player action tracking
+            actor = action_info["actor"]
+            if actor in overview["players"]:
+                overview["players"][actor]["actions_taken"].append(
+                    {
+                        "round": event.round_num,
+                        "action": event.event_type,
+                        "target": action_info["target"],
+                        "result": action_info["result"],
+                    }
+                )
+
+    # Add final round if exists
+    if round_events:
+        overview["round_summary"].append(
+            {"round": current_round, "events": round_events}
+        )
+
+    # Determine final result
+    overview["final_result"] = {
+        "winner": game_data["game_info"].get("winner", "unknown"),
+        "rounds_played": game_data["game_info"].get("rounds_played", 0),
+        "game_completed": game_data["game_info"].get("game_completed", False),
+        "werewolves_remaining": len(
+            [
+                p
+                for p in overview["players"].values()
+                if p["role"] == "werewolf" and p["final_status"] == "alive"
+            ]
+        ),
+        "villagers_remaining": len(
+            [
+                p
+                for p in overview["players"].values()
+                if p["role"] != "werewolf" and p["final_status"] == "alive"
+            ]
+        ),
+    }
+
+    return jsonify(overview)
+
+
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=5000)
