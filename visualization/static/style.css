@@ -484,6 +484,7 @@ header h1 {
         opacity: 0;
         transform: scale(0.8) translateY(-50px);
     }
+
     to {
         opacity: 1;
         transform: scale(1) translateY(0);

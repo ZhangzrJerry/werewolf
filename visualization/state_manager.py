@@ -27,7 +27,7 @@ class GameStateManager:
                 "name": name,
                 "status": "alive",
                 "role": player.role,  # Use actual role from log instead of "unknown"
-                "revealed": True,     # Show actual roles from the beginning
+                "revealed": True,  # Show actual roles from the beginning
             }
 
     def get_current_state(self) -> Dict[str, Any]:

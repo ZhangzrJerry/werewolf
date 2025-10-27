@@ -402,11 +402,11 @@ function setupEventListeners() {
     // Modal close functionality
     const modal = document.getElementById('overview-modal');
     const closeBtn = modal.querySelector('.close');
-    
+
     closeBtn.addEventListener('click', () => {
         modal.style.display = 'none';
     });
-    
+
     window.addEventListener('click', (e) => {
         if (e.target === modal) {
             modal.style.display = 'none';
@@ -587,7 +587,7 @@ async function showGameOverview() {
 
         // Show modal
         document.getElementById('overview-modal').style.display = 'block';
-        
+
     } catch (error) {
         console.error('Failed to load game overview:', error);
         alert('加载游戏概览失败');
@@ -600,15 +600,15 @@ function switchTab(tabName) {
     document.querySelectorAll('.tab-content').forEach(content => {
         content.classList.remove('active');
     });
-    
+
     // Remove active class from all tab buttons
     document.querySelectorAll('.tab-button').forEach(button => {
         button.classList.remove('active');
     });
-    
+
     // Show selected tab content
     document.getElementById(`tab-${tabName}`).classList.add('active');
-    
+
     // Set active tab button
     document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
 }
@@ -617,11 +617,11 @@ function switchTab(tabName) {
 function populateGameSummary(overview) {
     const resultContent = document.getElementById('game-result-content');
     const statsContent = document.getElementById('game-stats-content');
-    
+
     // Game result
     const result = overview.final_result;
     const winnerClass = result.winner === 'WEREWOLVES' ? 'loser' : 'winner'; // From villager perspective
-    
+
     resultContent.innerHTML = `
         <div class="result-card ${winnerClass}">
             <div class="title">游戏结果</div>
@@ -640,13 +640,13 @@ function populateGameSummary(overview) {
             <div class="value">${result.villagers_remaining}</div>
         </div>
     `;
-    
+
     // Game statistics
     const totalPlayers = Object.keys(overview.players).length;
     const totalDeaths = overview.death_timeline.length;
     const totalVotes = overview.voting_history.length;
     const totalSpecialActions = overview.special_actions.length;
-    
+
     statsContent.innerHTML = `
         <div class="stat-item">
             <div class="label">总玩家数</div>
@@ -678,25 +678,25 @@ function populateGameSummary(overview) {
 // Populate players overview tab
 function populatePlayersOverview(overview) {
     const content = document.getElementById('players-overview-content');
-    
+
     let html = '';
     Object.values(overview.players).forEach(player => {
         const isWerewolf = player.role === 'werewolf';
         const isDead = player.final_status === 'dead';
         const cardClass = `player-overview-card ${isWerewolf ? 'werewolf' : ''} ${isDead ? 'dead' : ''}`;
-        
+
         const statusText = isDead ? `死亡 (第${player.death_round}回合, ${player.death_reason})` : '存活';
-        
+
         let actionsText = '';
         if (player.actions_taken.length > 0) {
             actionsText = `行动: ${player.actions_taken.map(a => `${eventTypeTranslations[a.action] || a.action}(${a.target})`).join(', ')}`;
         }
-        
+
         let votesText = '';
         if (player.votes_cast.length > 0) {
             votesText = `投票: ${player.votes_cast.map(v => `R${v.round}→${v.target}`).join(', ')}`;
         }
-        
+
         html += `
             <div class="${cardClass}">
                 <div class="player-name">${player.name}</div>
@@ -709,19 +709,19 @@ function populatePlayersOverview(overview) {
             </div>
         `;
     });
-    
+
     content.innerHTML = html;
 }
 
 // Populate death timeline tab
 function populateDeathTimeline(overview) {
     const content = document.getElementById('death-timeline-content');
-    
+
     if (overview.death_timeline.length === 0) {
         content.innerHTML = '<p class="no-data">没有玩家死亡记录</p>';
         return;
     }
-    
+
     let html = '';
     overview.death_timeline.forEach(death => {
         html += `
@@ -732,19 +732,19 @@ function populateDeathTimeline(overview) {
             </div>
         `;
     });
-    
+
     content.innerHTML = html;
 }
 
 // Populate voting history tab
 function populateVotingHistory(overview) {
     const content = document.getElementById('voting-history-content');
-    
+
     if (overview.voting_history.length === 0) {
         content.innerHTML = '<p class="no-data">没有投票记录</p>';
         return;
     }
-    
+
     // Group votes by round
     const votesByRound = {};
     overview.voting_history.forEach(vote => {
@@ -753,7 +753,7 @@ function populateVotingHistory(overview) {
         }
         votesByRound[vote.round].push(vote);
     });
-    
+
     let html = '';
     Object.keys(votesByRound).sort((a, b) => parseInt(a) - parseInt(b)).forEach(round => {
         const votes = votesByRound[round];
@@ -762,7 +762,7 @@ function populateVotingHistory(overview) {
                 <div class="voting-round-header">第${round}回合投票</div>
                 <div class="votes-list">
         `;
-        
+
         votes.forEach(vote => {
             html += `
                 <div class="vote-item">
@@ -772,36 +772,36 @@ function populateVotingHistory(overview) {
                 </div>
             `;
         });
-        
+
         html += `
                 </div>
             </div>
         `;
     });
-    
+
     content.innerHTML = html;
 }
 
 // Populate special actions tab
 function populateSpecialActions(overview) {
     const content = document.getElementById('special-actions-content');
-    
+
     if (overview.special_actions.length === 0) {
         content.innerHTML = '<p class="no-data">没有特殊行动记录</p>';
         return;
     }
-    
+
     let html = '';
     overview.special_actions.forEach(action => {
         const actionClass = action.type.includes('werewolf') ? 'werewolf-action' :
-                           action.type.includes('seer') ? 'seer-action' :
-                           action.type.includes('witch') ? 'witch-action' :
-                           action.type.includes('hunter') ? 'hunter-action' : '';
-        
+            action.type.includes('seer') ? 'seer-action' :
+                action.type.includes('witch') ? 'witch-action' :
+                    action.type.includes('hunter') ? 'hunter-action' : '';
+
         const actionName = eventTypeTranslations[action.type] || action.type;
         const targetText = action.target ? ` → ${action.target}` : '';
         const resultText = action.result ? ` (${action.result})` : '';
-        
+
         html += `
             <div class="action-item ${actionClass}">
                 <div class="action-header">
@@ -813,6 +813,6 @@ function populateSpecialActions(overview) {
             </div>
         `;
     });
-    
+
     content.innerHTML = html;
 }
