@@ -1,173 +1,128 @@
-# Werewolf Game
+<div align="center">
 
-一个使用 AgentScope 实现的可迭代多智能体狼人杀游戏，支持规则引擎与 LLM 智能对局两种模式。
+<img src="doc/public/teaser.png" alt="teaser" width="70" style="border-radius: 100%;" />
 
-## 🚀 快速开始（Windows PowerShell）
+# Werewolf Game · 会学习的狼人杀智能体
+
+多智能体狼人杀系统，基于 AgentScope，可进行自我博弈、复盘分析与策略迭代。
+
+</div>
+
+## 特性亮点
+
+- 规则完备：支持 6/9/12 人板型、昼夜循环、投票/夜间行动与胜负判定
+- 多模型适配：DashScope(Qwen)/OpenAI/DeepSeek/ModelScope/Ollama 本地模型
+- 自我对弈：批量开局、可中断恢复、策略与复盘自动持久化
+- 易于扩展：清晰的编排器与 Agent 接口，便于添加新角色/策略
+
+> 更多展示请查看 [doc/index.md](./doc/index.md)
+
+## 环境配置
 
 ```powershell
-# 1) 激活虚拟环境
+# 1) 可选：创建并激活虚拟环境
+python -m venv env
 .\env\Scripts\Activate.ps1
 
-# 2) 安装项目
+# 2) 安装项目（包含依赖）
 pip install -e .
 
 # 3) 可选：安装测试依赖
 pip install -e ".[test]"
 ```
 
-### 启动方式 A：规则演示（无需模型/AgentScope）
+### 配置模型（任选其一）
 
-最简单的演示，使用固定策略展示回合流程：
-
-```powershell
-python demo_simple.py
-```
-
-### 启动方式 B：多智能体对局（需要 AgentScope + 模型）
-
-> ⚠️ **当前状态**：完整的 AgentScope 编排器 (`run_game.py`) 需要进一步配置适配。  
-> 推荐先使用 **启动方式 A** 或查看 `GUIDE.md` 了解完整功能。
-
-1. 安装 AgentScope：
+项目通过环境变量读取各家 API Key，亦支持在仓库根目录创建 `.env.local`（参考 `werewolf/config.py`）。
 
 ```powershell
-pip install agentscope
+# PowerShell 设置环境变量（会话内生效）
+$env:OPENAI_API_KEY = "sk-..."
+$env:DASHSCOPE_API_KEY = "..."
+$env:DEEPSEEK_API_KEY = "..."
+$env:MODELSCOPE_API_KEY = "..."
 ```
 
-2. 编辑 `werewolf/config.py`，选择模型并设置 API Key：
+默认会按以下优先级自动选择可用模型：ModelScope → DeepSeek → OpenAI → DashScope → Ollama（本地无需 Key，但需本机服务可用）。也可在运行时用参数 `--model`/`-m` 指定。
 
-- DashScope（通义千问）示例：`DEFAULT_MODEL = "dashscope_chat"`，填写 `api_key`
-- OpenAI 示例：`DEFAULT_MODEL = "openai_chat"`，填写 `api_key`
-- 本地 Ollama：`DEFAULT_MODEL = "ollama_chat"`，确保本机已启动 Ollama 服务
+## 快速体验
 
-3. 尝试简化演示（包含 AgentScope 初始化）：
+### 单局对战（多智能体 + AgentScope）
 
 ```powershell
-python demo_agentscope.py
+python run_game.py --game-type six --rounds 10 --discuss 2 --verbose
 ```
 
-或参考 `GUIDE.md` 中的详细配置和自定义编排方案。
+常用参数：
 
-## 🧩 仅用规则引擎（编程接口）
+- `--game-type {six|nine|twelve}` 对局人数/板型
+- `--model <config_name>` 使用的模型配置名（见 `werewolf/config.py` 中 `MODEL_CONFIGS`）
+- `--rounds <int>` 最多昼夜轮数，默认 20
+- `--discuss <int>` 每个白天的讨论轮次，默认 3
+- `--players "Alice,Bob,..."` 自定义玩家名（覆盖预设）
 
-```python
-from werewolf import WerewolfGame
+> 运行后会打印对局摘要，并将完整日志保存到文件（由编排器维护）。
 
-players = ["Alice", "Bob", "Charlie", "David", "Eve", "Frank"]
-game = WerewolfGame(players, game_type="six")
+### 自我对弈训练（策略迭代）
 
-state = game.to_dict()
-print(state)
-```
-
-## 🧪 运行测试
+批量运行游戏，自动复盘分析并迭代更新策略提示词：
 
 ```powershell
-# 使用 unittest
-python -m unittest discover tests -v
-
-# 或使用测试脚本
-python run_tests.py
-
-# 或使用 pytest（需先安装）
-pytest -q
-```
-
-更详细的测试说明见 `tests/README.md`，整体测试总结见 `TESTING.md`。
-
-## 🎓 自我对弈训练（Learning Engine）
-
-本项目支持通过 AI 自我对弈来迭代优化策略：
-
-### 单局游戏
-
-```powershell
-python run_game.py
-```
-
-游戏结束后会自动：
-
-- 保存完整日志到 `.training/game_logs/`
-- 生成复盘分析到 `.training/reviews/`
-- 更新角色策略到 `.training/strategies/`
-
-### 批量训练（推荐）
-
-运行多局游戏进行策略迭代：
-
-```powershell
-# 运行 50 局训练（默认）
+# 运行 50 局（默认）
 python run_selfplay.py
 
-# 自定义参数
-python run_selfplay.py -n 100              # 运行 100 局
-python run_selfplay.py -p 4                # 4 个并行进程
-python run_selfplay.py -t nine             # 9 人局
-python run_selfplay.py --no-resume         # 从头开始（忽略之前进度）
-python run_selfplay.py -v                  # 详细输出每局过程
+# 常用：大规模并行九人局 + 指定模型
+python run_selfplay.py -n 1200 -p 8 -m deepseek_chat -t nine
+
+# 其它参数
+python run_selfplay.py -n 100      # 自定义局数
+python run_selfplay.py -p 4        # 并行工作进程（1-8）
+python run_selfplay.py -t twelve   # 12 人局
+python run_selfplay.py --no-resume # 从头开始（忽略历史进度）
+python run_selfplay.py -v          # 详细过程打印
 ```
 
-**特性：**
+训练过程会自动创建并维护以下目录：
 
-- ✅ **可中断恢复**：按 `Ctrl+C` 中断后，下次运行自动从上次进度继续
-- ✅ **并行加速**：使用 `-p N` 参数同时运行多局游戏
-- ✅ **策略持久化**：每局后自动保存和加载最新策略
-- ✅ **自动备份**：更新策略前自动备份到 `.training/strategies/backups/`，可随时恢复旧版本
-- ✅ **进度追踪**：训练元数据保存在 `.training/progress/progress.json`
+- `.training/strategies/` 角色策略提示词（迭代更新）
+- `.training/game_logs/` 对局日志
+- `.training/reviews/` 复盘分析结果
+- `.training/progress/progress.json` 训练进度元数据
 
-**查看训练结果：**
+> 支持中断恢复、策略版本备份与统计输出（胜率、平均回合数等）。
 
-```powershell
-# 查看当前策略
-cat .training/strategies/werewolf.json
-cat .training/strategies/seer.json
+## 模型与配置
 
-# 查看策略历史版本
-ls .training/strategies/backups/
+在 `werewolf/config.py` 中可查看/修改：
 
-# 恢复旧版本策略
-Copy-Item .training/strategies/backups/werewolf_20251026_120000.json .training/strategies/werewolf.json
+- `MODEL_CONFIGS`：各模型的 `config_name / model_type / model_name / base_url / api_key`
+- `DEFAULT_MODEL`：默认模型（当未检测到可用 Key 时回退）
+- `GAME_CONFIG`：默认 `game_type / max_rounds / discussion_rounds / verbose`
+- 预设玩家名：`PLAYER_NAMES_6/9/12`
 
-# 查看最新复盘
-ls .training/reviews/ | sort -r | select -first 1
-```
-
-## 📁 项目结构
+## 项目结构
 
 ```
-werewolf/
-├── werewolf/
-│   ├── __init__.py           # 包导出
-│   ├── werewolf_game.py      # 规则与状态机（不依赖 LLM）
-│   ├── agents.py             # 智能体实现（对 AgentScope 软依赖，测试环境可用 stub）
-│   ├── orchestrator.py       # 多智能体编排器（讨论/投票/夜间行动）
-│   └── config.py             # 模型与游戏配置（默认模型、API Key）
-├── tests/
-│   ├── test_werewolf_game.py # 规则单测
-│   └── test_agents.py        # 智能体单测（mock/stub，不触发真实调用）
-├── demo_simple.py            # 规则演示脚本（无需模型/AgentScope）
-├── run_game.py               # 多智能体对局入口（需 AgentScope + 模型）
-├── GUIDE.md                  # 玩法、配置与扩展指南
-├── TESTING.md                # 测试覆盖与说明
-├── pyproject.toml            # 项目配置
-└── README.md                 # 本文件
+.
+├─ werewolf/                # 核心包
+│  ├─ orchestrator.py       # 多智能体编排（讨论/投票/夜间行动）
+│  ├─ agents.py             # 角色 Agent 与策略注入
+│  ├─ werewolf_game.py      # 规则与状态机
+│  └─ config.py             # 模型与默认配置
+├─ run_game.py              # 单局对战入口
+├─ run_selfplay.py          # 自我对弈训练入口
+├─ tests/                   # 单元测试
+└─ doc/                     # 项目介绍与演示素材（见下）
 ```
 
-## ✨ 功能特性
+## 常见问题（FAQ）
 
-- 支持 6/9/12 人局角色配置
-- 角色：狼人、村民、预言家、女巫、猎人、守卫
-- 夜/昼阶段完整规则与胜负判定
-- 智能体具备角色化提示、记忆、讨论与投票能力
-- 兼容无 AgentScope 的测试/演示环境
+- 提示未找到可用模型：请设置环境变量或在 `.env.local` 中写入对应 `*_API_KEY`
+- Ollama 本地模型无法连接：确认本机 11434 端口服务可用
+- 运行缓慢/费用较高：将 `--discuss`/`--rounds` 调小，或改用轻量模型（如 Qwen Turbo、GPT-4o-mini）
+- Windows 权限问题：PowerShell 如禁用脚本执行，可在管理员窗口执行 `Set-ExecutionPolicy RemoteSigned`
 
-## 🔧 常见问题（Troubleshooting）
+## 版权与鸣谢
 
-详细的故障排除指南请查看 [`TROUBLESHOOTING.md`](TROUBLESHOOTING.md)
-
-快速解决方案：
-
-- **ImportError: agentscope**：`pip install agentscope` 或使用 `demo_simple.py`
-- **API Key 错误**：在 `werewolf/config.py` 填写正确的 Key
-- **运行缓慢**：减少 `discussion_rounds` 或使用更快的模型（如 `qwen-turbo`）
-- **测试失败**：确保 Python 3.10+ 且已运行 `pip install -e ".[test]"`
+- 基于 [AgentScope](https://github.com/modelscope/agentscope) 构建
+- 本仓库仅用于研究与学习，请在遵守各 API/模型服务条款的前提下使用
