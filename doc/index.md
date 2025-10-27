@@ -245,14 +245,6 @@ python run_selfplay.py -n 10 -p 4 -m modelscope_chat/deepseek_chat
 
 ---
 
-## 🖥️ 对局可视化界面
-
-<div class="center">
-  <img width=62% src="./public/screenshot.png">
-</div>
-
----
-
 ![bg opacity:0.1](./public/teaser.png)
 
 ## 1. 项目愿景
@@ -273,19 +265,32 @@ python run_selfplay.py -n 10 -p 4 -m modelscope_chat/deepseek_chat
 
 ---
 
-## 🧙‍♀️ 女巫迭代案例
+## 📊 成长对比实验
+
+![](./public/first_round_accuracy_trend.png)
 
 ---
 
-## 🐺 狼人迭代案例
+## 📊 成长对比实验
+
+![](./public/witch_poison_accuracy_trend.png)
 
 ---
 
-## 👨‍🌾 村民迭代案例
+## 📊 成长对比实验
+
+![](./public/hunter_shot_accuracy_trend.png)
 
 ---
 
 ## 🎬 现场对战演示
+
+## 智能体迭代案例
+
+- 🧙‍♀️ 女巫迭代案例
+- 🕵️‍♂️ 预言家迭代案例
+- 🐺 狼人迭代案例
+- 👨‍🌾 村民迭代案例
 
 ---
 
