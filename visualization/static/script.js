@@ -239,6 +239,22 @@ function displayEvent(event) {
             html += `<p>进入 <strong>${phaseTranslations[event.data.phase]}</strong> 阶段</p>`;
             break;
 
+        case 'guardian_action':
+            if (event.data.action === 'no_protection') {
+                html += `<div class="event-data">`;
+                html += `<p>🛡️ 本局没有守卫，或守卫未行动</p>`;
+                html += `</div>`;
+            } else if (event.data.guardian && event.data.protected) {
+                html += `<div class="event-data">`;
+                html += `<p>🛡️ 守卫 <strong>${event.data.guardian}</strong> 保护了 <strong>${event.data.protected}</strong></p>`;
+                html += `</div>`;
+            } else {
+                html += `<div class="event-data">`;
+                html += `<p>🛡️ 守卫正在行动...</p>`;
+                html += `</div>`;
+            }
+            break;
+
         case 'werewolf_target':
             html += '<div class="event-data">';
             html += '<p><strong>狼人选择目标:</strong></p>';

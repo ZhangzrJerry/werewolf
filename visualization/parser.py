@@ -118,15 +118,34 @@ class GameLogParser:
 
         # Guardian protecting
         if "[GUARDIAN] Protecting..." in content:
-            self.events.append(
-                GameEvent(
-                    round_num=self.current_round,
-                    phase="night",
-                    event_type="guardian_action",
-                    data={"action": "protecting"},
-                    timestamp=self.event_counter,
+            # Try to find who the guardian protected
+            guardian_protect_match = re.search(r"  (\w+) protects: (\w+)", content)
+            if guardian_protect_match:
+                guardian, protected = guardian_protect_match.groups()
+                self.events.append(
+                    GameEvent(
+                        round_num=self.current_round,
+                        phase="night",
+                        event_type="guardian_action",
+                        data={
+                            "action": "protecting",
+                            "guardian": guardian,
+                            "protected": protected,
+                        },
+                        timestamp=self.event_counter,
+                    )
                 )
-            )
+            else:
+                # No guardian in this game or guardian didn't protect anyone
+                self.events.append(
+                    GameEvent(
+                        round_num=self.current_round,
+                        phase="night",
+                        event_type="guardian_action",
+                        data={"action": "no_protection"},
+                        timestamp=self.event_counter,
+                    )
+                )
             self.event_counter += 1
 
         # Werewolves choosing target
