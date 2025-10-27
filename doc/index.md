@@ -6,7 +6,7 @@ class:
   - invert
 header: 让 AI 像人类一样学习和成长！
 footer: <a href="https://github.com/zhangzrjerry">@zhangzrjerry</a>
-backgroundColor: "rgba(53, 55, 59, 1)"
+backgroundColor: "rgb(53, 55, 59)"
 ---
 
 <style>
@@ -14,7 +14,7 @@ backgroundColor: "rgba(53, 55, 59, 1)"
   --primary: rgb(245, 132, 52);
   --secondary: rgb(251, 162, 81);
   --accent: rgb(253, 216, 179);
-  --background: rgb(35, 39, 54);
+  --background: rgb(53, 55, 59);
 }
 
 header {
@@ -252,9 +252,9 @@ python run_selfplay.py -n 10 -p 4 -m modelscope_chat/deepseek_chat
 
 ## 📊 成长对比实验
 
-进行了超 800 局 9 人板型的对局
+进行了超 **800 局 9 人** + **100 局 12 人** 板型的对局
 
-<!-- deepseek api usage screenshot -->
+![](./public/rounds_trend_analysis.png)
 
 ---
 

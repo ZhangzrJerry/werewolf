@@ -37,7 +37,7 @@ MODEL_CONFIGS = [
         "organization": os.getenv("OPENAI_ORG", ""),  # Optional
         "generate_args": {
             "temperature": 0.7,
-            "max_tokens": 500,
+            "max_tokens": 1200,
         },
     },
     {
@@ -57,7 +57,7 @@ MODEL_CONFIGS = [
         "base_url": "https://api.deepseek.com",  # DeepSeek endpoint
         "generate_args": {
             "temperature": 0.7,
-            "max_tokens": 500,
+            "max_tokens": 1200,
             "stream": True,  # Enable streaming to avoid stream_options error
         },
     },
@@ -69,7 +69,7 @@ MODEL_CONFIGS = [
         "base_url": "https://api-inference.modelscope.cn/v1",  # ModelScope API endpoint
         "generate_args": {
             "temperature": 0.7,
-            "max_tokens": 500,
+            "max_tokens": 1200,
             "stream": True,  # Use streaming (AgentScope bug with stream_options when stream=False)
         },
     },

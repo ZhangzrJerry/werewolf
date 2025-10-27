@@ -20,6 +20,11 @@ matplotlib.rcParams["font.sans-serif"] = [
 ]
 matplotlib.rcParams["axes.unicode_minus"] = False
 
+COLOR_PRIMARY = "#F58434"  # rgb(245, 132, 52) - 橙色
+COLOR_SECONDARY = "#64B5F6"  # rgb(100, 181, 246) - 蓝色
+COLOR_ACCENT = "#FDD8B3"  # rgb(253, 216, 179) - 浅橙
+COLOR_BACKGROUND = "#35373B"  # rgb(53, 55, 59) - 深灰
+
 
 def is_game_complete(file_path: str) -> bool:
     """
@@ -110,7 +115,9 @@ def analyze_game_logs(logs_dir: str) -> Tuple[List[Dict], List[str]]:
         if is_game_complete(file_path):
             game_info = extract_game_info(file_path)
             if game_info and game_info["timestamp"]:
-                complete_games.append(game_info)
+                # 只统计九人局
+                if game_info["game_type"] == "nine":
+                    complete_games.append(game_info)
         else:
             incomplete_games.append(log_file.name)
 
@@ -125,7 +132,7 @@ def print_statistics(complete_games: List[Dict], incomplete_games: List[str]):
     打印统计信息
     """
     print("=" * 80)
-    print("狼人杀游戏日志统计报告")
+    print("狼人杀游戏日志统计报告（仅九人局）")
     print("=" * 80)
     print()
 
@@ -202,91 +209,90 @@ def plot_rounds_trend(complete_games: List[Dict], window_size: int = 20):
         window = rounds[start_idx : i + 1]
         moving_avg.append(sum(window) / len(window))
 
-    # 创建图表
-    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(14, 10))
+    # 计算线性回归
+    import numpy as np
 
-    # 图1: 每场游戏的轮次 + 移动平均线
+    x = np.array(game_numbers)
+    y = np.array(rounds)
+    # 使用最小二乘法计算线性回归
+    coefficients = np.polyfit(x, y, 1)
+    linear_trend = np.poly1d(coefficients)
+    trend_line = linear_trend(x)
+
+    # 创建图表 - 使用主题配色
+    fig, ax1 = plt.subplots(1, 1, figsize=(14, 6), facecolor=COLOR_BACKGROUND)
+    ax1.set_facecolor(COLOR_BACKGROUND)
+
+    # 每场游戏的轮次 + 移动平均线 + 线性回归
     ax1.scatter(
-        game_numbers, rounds, alpha=0.3, s=20, label="单场游戏轮次", color="lightblue"
+        game_numbers,
+        rounds,
+        alpha=0.4,
+        s=25,
+        label="单场游戏轮次",
+        color=COLOR_ACCENT,
+        edgecolors=COLOR_SECONDARY,
+        linewidths=0.5,
     )
     ax1.plot(
         game_numbers,
         moving_avg,
-        color="red",
-        linewidth=2,
+        color=COLOR_SECONDARY,
+        linewidth=2.5,
         label=f"{window_size}场移动平均",
+        alpha=0.9,
+    )
+
+    # 添加线性回归趋势线
+    slope = coefficients[0]
+    intercept = coefficients[1]
+    ax1.plot(
+        game_numbers,
+        trend_line,
+        color=COLOR_PRIMARY,
+        linestyle="--",
+        linewidth=2.5,
+        label=f"线性回归 (斜率={slope:.4f})",
         alpha=0.8,
     )
 
-    # 添加整体平均线
-    overall_avg = sum(rounds) / len(rounds)
-    ax1.axhline(
-        y=overall_avg,
-        color="green",
-        linestyle="--",
-        linewidth=1.5,
-        label=f"总体平均 ({overall_avg:.2f}轮)",
-        alpha=0.7,
+    ax1.set_xlabel(
+        "游戏编号（时间顺序）", fontsize=16, fontweight="bold", color="white"
+    )
+    ax1.set_ylabel("轮次数", fontsize=16, fontweight="bold", color="white")
+    ax1.set_title(
+        "游戏轮次随迭代次数变化趋势",
+        fontsize=20,
+        fontweight="bold",
+        pad=20,
+        color="white",
     )
 
-    ax1.set_xlabel("游戏编号（时间顺序）", fontsize=12)
-    ax1.set_ylabel("轮次数", fontsize=12)
-    ax1.set_title("游戏轮次随迭代次数变化趋势", fontsize=14, fontweight="bold")
-    ax1.legend(loc="upper right")
-    ax1.grid(True, alpha=0.3)
+    # 设置图例样式 - 黑色底色
+    legend = ax1.legend(loc="upper right", fontsize=14, framealpha=0.95)
+    legend.get_frame().set_facecolor(COLOR_BACKGROUND)
+    legend.get_frame().set_edgecolor("white")
+    legend.get_frame().set_linewidth(1.5)
+    for text in legend.get_texts():
+        text.set_color("white")
+
+    ax1.grid(True, alpha=0.15, linestyle="--", linewidth=0.5, color="white")
     ax1.set_ylim(0, max(rounds) + 1)
 
-    # 图2: 分段统计（每50场游戏的平均轮次）
-    segment_size = 50
-    segments = []
-    segment_labels = []
-    segment_avgs = []
+    # 设置坐标轴刻度颜色和字体大小
+    ax1.tick_params(axis="x", colors="white", labelsize=13, width=1.5)
+    ax1.tick_params(axis="y", colors="white", labelsize=13, width=1.5)
 
-    for i in range(0, len(rounds), segment_size):
-        segment = rounds[i : i + segment_size]
-        if segment:
-            segments.append(i // segment_size + 1)
-            segment_labels.append(f"{i+1}-{min(i+segment_size, len(rounds))}")
-            segment_avgs.append(sum(segment) / len(segment))
-
-    colors = plt.cm.viridis(range(len(segments)))
-    bars = ax2.bar(segments, segment_avgs, color=colors, alpha=0.7, edgecolor="black")
-
-    # 在柱状图上标注数值
-    for bar, avg in zip(bars, segment_avgs):
-        height = bar.get_height()
-        ax2.text(
-            bar.get_x() + bar.get_width() / 2.0,
-            height,
-            f"{avg:.2f}",
-            ha="center",
-            va="bottom",
-            fontsize=9,
-        )
-
-    ax2.axhline(
-        y=overall_avg,
-        color="red",
-        linestyle="--",
-        linewidth=1.5,
-        label=f"总体平均 ({overall_avg:.2f}轮)",
-        alpha=0.7,
-    )
-
-    ax2.set_xlabel(f"游戏分段（每{segment_size}场）", fontsize=12)
-    ax2.set_ylabel("平均轮次数", fontsize=12)
-    ax2.set_title(
-        f"每{segment_size}场游戏的平均轮次对比", fontsize=14, fontweight="bold"
-    )
-    ax2.set_xticks(segments)
-    ax2.set_xticklabels(segment_labels, rotation=45, ha="right")
-    ax2.legend(loc="upper right")
-    ax2.grid(True, alpha=0.3, axis="y")
+    # 设置坐标轴边框颜色和粗细
+    for spine in ax1.spines.values():
+        spine.set_edgecolor("white")
+        spine.set_alpha(0.5)
+        spine.set_linewidth(1.5)
 
     plt.tight_layout()
 
     # 保存图表
-    output_file = "d:/Projects/werewolf/rounds_trend_analysis.png"
+    output_file = "./doc/public/rounds_trend_analysis.png"
     plt.savefig(output_file, dpi=150, bbox_inches="tight")
     print(f"\n趋势图已保存到: {output_file}")
 
@@ -320,7 +326,7 @@ def plot_rounds_trend(complete_games: List[Dict], window_size: int = 20):
 
 def main():
     # 游戏日志目录
-    logs_dir = r"d:\Projects\werewolf\.training\game_logs"
+    logs_dir = r".\.training\game_logs"
 
     print("开始分析游戏日志...")
     print()
