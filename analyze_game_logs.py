@@ -261,7 +261,7 @@ def plot_rounds_trend(complete_games: List[Dict], window_size: int = 20):
     )
     ax1.set_ylabel("轮次数", fontsize=16, fontweight="bold", color="white")
     ax1.set_title(
-        "游戏轮次随迭代次数变化趋势",
+        "9 人板型游戏轮次随迭代次数变化趋势",
         fontsize=20,
         fontweight="bold",
         pad=20,

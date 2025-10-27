@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>狼人杀游戏回放系统</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>🐺 狼人杀游戏回放系统</h1>
+        </header>
+
+        <!-- Log file selector -->
+        <div id="log-selector" class="section">
+            <h2>选择游戏日志</h2>
+            <div id="log-list" class="log-list">
+                <p class="loading">加载中...</p>
+            </div>
+        </div>
+
+        <!-- Game visualization (hidden until log is loaded) -->
+        <div id="game-container" class="hidden">
+            <!-- Game info panel -->
+            <div class="section game-info">
+                <h2>游戏信息</h2>
+                <div id="game-info-content">
+                    <p><strong>游戏类型:</strong> <span id="game-type">-</span></p>
+                    <p><strong>回合数:</strong> <span id="rounds-played">-</span></p>
+                    <p><strong>胜利方:</strong> <span id="winner">-</span></p>
+                </div>
+            </div>
+
+            <!-- Players panel -->
+            <div class="section players-panel">
+                <h2>玩家状态</h2>
+                <div id="players-container" class="players-circle">
+                    <!-- Players will be dynamically added here -->
+                </div>
+            </div>
+
+            <!-- Event display -->
+            <div class="section event-panel">
+                <h2>事件详情</h2>
+                <div id="event-info">
+                    <div class="phase-indicator">
+                        <span id="current-round">回合 -</span>
+                        <span id="current-phase">阶段 -</span>
+                    </div>
+                    <div id="event-content" class="event-content">
+                        <p>点击"开始"按钮开始回放</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Progress bar -->
+            <div class="section progress-section">
+                <div class="progress-bar">
+                    <div id="progress-fill" class="progress-fill"></div>
+                </div>
+                <div class="progress-info">
+                    <span id="progress-text">0 / 0</span>
+                </div>
+            </div>
+
+            <!-- Control panel -->
+            <div class="section control-panel">
+                <div class="controls">
+                    <button id="btn-reset" class="btn btn-secondary">⏮ 重置</button>
+                    <button id="btn-prev" class="btn btn-secondary">◀ 上一步</button>
+                    <button id="btn-play" class="btn btn-primary">▶ 播放</button>
+                    <button id="btn-next" class="btn btn-secondary">下一步 ▶</button>
+                    <button id="btn-back" class="btn btn-secondary">🔙 返回选择</button>
+                </div>
+                <div class="speed-control">
+                    <label>播放速度:</label>
+                    <select id="speed-select">
+                        <option value="2000">慢速 (2s)</option>
+                        <option value="1000" selected>中速 (1s)</option>
+                        <option value="500">快速 (0.5s)</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+
+</html>
