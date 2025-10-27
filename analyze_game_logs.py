@@ -87,6 +87,47 @@ def extract_game_info(file_path: str) -> Dict:
             first_eliminated = round_1_match.group(1)
             first_eliminated_is_werewolf = first_eliminated in werewolf_names
 
+        # 提取女巫毒药使用情况
+        witch_poison_target = None
+        witch_poison_hit_werewolf = False
+        poison_match = re.search(
+            r"\[WITCH\].*?使用毒药.*?目标:\s*([^\s\n]+)", content, re.DOTALL
+        )
+        if not poison_match:
+            # 尝试另一种格式
+            poison_match = re.search(
+                r"\[WITCH\].*?毒死.*?([^\s\n]+)", content, re.DOTALL
+            )
+        if not poison_match:
+            # 再尝试英文格式
+            poison_match = re.search(
+                r"\[WITCH\].*?poison.*?target:\s*([^\s\n]+)",
+                content,
+                re.DOTALL | re.IGNORECASE,
+            )
+
+        if poison_match:
+            witch_poison_target = poison_match.group(1)
+            witch_poison_hit_werewolf = witch_poison_target in werewolf_names
+
+        # 提取猎人开枪情况
+        hunter_shot_target = None
+        hunter_shot_hit_werewolf = False
+
+        # 查找猎人技能触发
+        hunter_match = re.search(
+            r"\[HUNTER SKILL\].*?([^\s]+)\s+shoots\s+([^\s\n]+)", content, re.DOTALL
+        )
+        if not hunter_match:
+            # 尝试中文格式
+            hunter_match = re.search(
+                r"\[猎人技能\].*?([^\s]+).*?射杀.*?([^\s\n]+)", content, re.DOTALL
+            )
+
+        if hunter_match:
+            hunter_shot_target = hunter_match.group(2)
+            hunter_shot_hit_werewolf = hunter_shot_target in werewolf_names
+
         # 从文件名提取时间戳
         filename = os.path.basename(file_path)
         timestamp_match = re.search(r"werewolf_game_(\d{8}_\d{6})", filename)
@@ -107,6 +148,10 @@ def extract_game_info(file_path: str) -> Dict:
             "werewolf_count": len(werewolf_names),
             "first_eliminated": first_eliminated,
             "first_eliminated_is_werewolf": first_eliminated_is_werewolf,
+            "witch_poison_target": witch_poison_target,
+            "witch_poison_hit_werewolf": witch_poison_hit_werewolf,
+            "hunter_shot_target": hunter_shot_target,
+            "hunter_shot_hit_werewolf": hunter_shot_hit_werewolf,
         }
     except Exception as e:
         print(f"分析文件 {file_path} 时出错: {e}")
@@ -250,6 +295,82 @@ def print_statistics(complete_games: List[Dict], incomplete_games: List[str]):
             print("→ 第一轮投票准确率接近随机水平")
     else:
         print("没有找到第一轮投票记录")
+    print()
+
+    # 女巫毒药准确率统计
+    print("-" * 80)
+    print("女巫毒药使用统计（仅完整游戏）")
+    print("-" * 80)
+
+    games_with_poison = [
+        game for game in complete_games if game["witch_poison_target"] is not None
+    ]
+    if games_with_poison:
+        total_poison_uses = len(games_with_poison)
+        poison_hit_werewolf = sum(
+            1 for game in games_with_poison if game["witch_poison_hit_werewolf"]
+        )
+        poison_hit_villager = total_poison_uses - poison_hit_werewolf
+
+        poison_accuracy = (poison_hit_werewolf / total_poison_uses) * 100
+
+        print(f"女巫使用毒药的游戏数: {total_poison_uses}")
+        print(f"毒中狼人: {poison_hit_werewolf:4d} 次 ({poison_accuracy:5.1f}%)")
+        print(f"毒中村民: {poison_hit_villager:4d} 次 ({100-poison_accuracy:5.1f}%)")
+        print()
+
+        # 理论随机概率
+        theoretical_poison_prob = 3 / 9 * 100  # 33.33%
+        diff = poison_accuracy - theoretical_poison_prob
+        print(f"理论概率（随机使用）: {theoretical_poison_prob:.2f}%")
+        print(f"实际准确率偏差: {diff:+.2f}%")
+
+        if poison_accuracy > theoretical_poison_prob + 10:
+            print("✓ 女巫毒药使用准确率较高")
+        elif poison_accuracy < theoretical_poison_prob - 10:
+            print("✗ 女巫毒药使用准确率较低")
+        else:
+            print("→ 女巫毒药使用准确率接近随机水平")
+    else:
+        print("没有找到女巫使用毒药的记录")
+    print()
+
+    # 猎人开枪准确率统计
+    print("-" * 80)
+    print("猎人开枪统计（仅完整游戏）")
+    print("-" * 80)
+
+    games_with_hunter = [
+        game for game in complete_games if game["hunter_shot_target"] is not None
+    ]
+    if games_with_hunter:
+        total_hunter_shots = len(games_with_hunter)
+        hunter_hit_werewolf = sum(
+            1 for game in games_with_hunter if game["hunter_shot_hit_werewolf"]
+        )
+        hunter_hit_villager = total_hunter_shots - hunter_hit_werewolf
+
+        hunter_accuracy = (hunter_hit_werewolf / total_hunter_shots) * 100
+
+        print(f"猎人开枪的游戏数: {total_hunter_shots}")
+        print(f"射中狼人: {hunter_hit_werewolf:4d} 次 ({hunter_accuracy:5.1f}%)")
+        print(f"射中村民: {hunter_hit_villager:4d} 次 ({100-hunter_accuracy:5.1f}%)")
+        print()
+
+        # 理论随机概率
+        theoretical_hunter_prob = 3 / 9 * 100  # 33.33%
+        diff = hunter_accuracy - theoretical_hunter_prob
+        print(f"理论概率（随机开枪）: {theoretical_hunter_prob:.2f}%")
+        print(f"实际准确率偏差: {diff:+.2f}%")
+
+        if hunter_accuracy > theoretical_hunter_prob + 10:
+            print("✓ 猎人开枪准确率较高")
+        elif hunter_accuracy < theoretical_hunter_prob - 10:
+            print("✗ 猎人开枪准确率较低")
+        else:
+            print("→ 猎人开枪准确率接近随机水平")
+    else:
+        print("没有找到猎人开枪的记录")
     print()
 
 
@@ -534,6 +655,288 @@ def plot_first_round_accuracy_trend(complete_games: List[Dict], window_size: int
             print("→ 第一轮准确率基本稳定")
 
 
+def plot_witch_poison_accuracy_trend(complete_games: List[Dict], window_size: int = 20):
+    """
+    绘制女巫毒药准确率随迭代次数的变化趋势
+    """
+    # 过滤出有女巫使用毒药记录的游戏
+    games_with_poison = [
+        game for game in complete_games if game["witch_poison_target"] is not None
+    ]
+
+    if not games_with_poison:
+        print("没有女巫使用毒药的数据可以绘图")
+        return
+
+    # 准备数据
+    game_numbers = list(range(1, len(games_with_poison) + 1))
+    hit_werewolf = [
+        1 if game["witch_poison_hit_werewolf"] else 0 for game in games_with_poison
+    ]
+
+    # 计算移动平均准确率
+    moving_avg_accuracy = []
+    for i in range(len(hit_werewolf)):
+        start_idx = max(0, i - window_size + 1)
+        window = hit_werewolf[start_idx : i + 1]
+        accuracy = (sum(window) / len(window)) * 100
+        moving_avg_accuracy.append(accuracy)
+
+    # 计算线性回归
+    import numpy as np
+
+    x = np.array(game_numbers)
+    y = np.array(moving_avg_accuracy)
+    coefficients = np.polyfit(x, y, 1)
+    linear_trend = np.poly1d(coefficients)
+    trend_line = linear_trend(x)
+
+    # 创建图表
+    fig, ax1 = plt.subplots(1, 1, figsize=(14, 6), facecolor=COLOR_BACKGROUND)
+    ax1.set_facecolor(COLOR_BACKGROUND)
+
+    # 绘制移动平均线
+    ax1.plot(
+        game_numbers,
+        moving_avg_accuracy,
+        color=COLOR_SECONDARY,
+        linewidth=2.5,
+        label=f"{window_size}场移动平均准确率",
+        alpha=0.9,
+    )
+
+    # 添加线性回归趋势线
+    slope = coefficients[0]
+    ax1.plot(
+        game_numbers,
+        trend_line,
+        color=COLOR_PRIMARY,
+        linestyle="--",
+        linewidth=2.5,
+        label=f"线性回归 (斜率={slope:.4f})",
+        alpha=0.8,
+    )
+
+    # 添加理论随机概率基准线
+    theoretical_prob = 33.33
+    ax1.axhline(
+        y=theoretical_prob,
+        color=COLOR_ACCENT,
+        linestyle=":",
+        linewidth=2,
+        label=f"理论随机概率 ({theoretical_prob:.1f}%)",
+        alpha=0.7,
+    )
+
+    ax1.set_xlabel(
+        "游戏编号（时间顺序）", fontsize=16, fontweight="bold", color="white"
+    )
+    ax1.set_ylabel("女巫毒药准确率 (%)", fontsize=16, fontweight="bold", color="white")
+    ax1.set_title(
+        "女巫毒药准确率随迭代次数变化趋势",
+        fontsize=20,
+        fontweight="bold",
+        pad=20,
+        color="white",
+    )
+
+    # 设置图例样式
+    legend = ax1.legend(loc="upper right", fontsize=14, framealpha=0.95)
+    legend.get_frame().set_facecolor(COLOR_BACKGROUND)
+    legend.get_frame().set_edgecolor("white")
+    legend.get_frame().set_linewidth(1.5)
+    for text in legend.get_texts():
+        text.set_color("white")
+
+    ax1.grid(True, alpha=0.15, linestyle="--", linewidth=0.5, color="white")
+    ax1.set_ylim(0, 100)
+    ax1.set_xlim(0, len(game_numbers) + 1)
+
+    # 设置坐标轴刻度颜色和字体大小
+    ax1.tick_params(axis="x", colors="white", labelsize=13, width=1.5)
+    ax1.tick_params(axis="y", colors="white", labelsize=13, width=1.5)
+
+    # 设置坐标轴边框颜色和粗细
+    for spine in ax1.spines.values():
+        spine.set_edgecolor("white")
+        spine.set_alpha(0.5)
+        spine.set_linewidth(1.5)
+
+    plt.tight_layout()
+
+    # 保存图表
+    output_file = "./doc/public/witch_poison_accuracy_trend.png"
+    plt.savefig(output_file, dpi=150, bbox_inches="tight")
+    print(f"\n女巫毒药准确率趋势图已保存到: {output_file}")
+
+    plt.show()
+
+    # 计算趋势分析
+    print("\n" + "=" * 80)
+    print("女巫毒药准确率趋势分析")
+    print("=" * 80)
+
+    third = len(hit_werewolf) // 3
+    if third > 0:
+        first_third_accuracy = (sum(hit_werewolf[:third]) / third) * 100
+        last_third_accuracy = (sum(hit_werewolf[-third:]) / third) * 100
+        change = last_third_accuracy - first_third_accuracy
+
+        print(f"前1/3游戏（1-{third}场）准确率: {first_third_accuracy:.2f}%")
+        print(
+            f"后1/3游戏（{len(hit_werewolf)-third+1}-{len(hit_werewolf)}场）准确率: {last_third_accuracy:.2f}%"
+        )
+        print(f"变化: {change:+.2f}%")
+
+        if change > 5:
+            print("✓ 女巫用药准确率呈上升趋势，AI在学习改进")
+        elif change < -5:
+            print("✗ 女巫用药准确率呈下降趋势")
+        else:
+            print("→ 女巫用药准确率基本稳定")
+
+
+def plot_hunter_shot_accuracy_trend(complete_games: List[Dict], window_size: int = 20):
+    """
+    绘制猎人开枪准确率随迭代次数的变化趋势
+    """
+    # 过滤出有猎人开枪记录的游戏
+    games_with_hunter = [
+        game for game in complete_games if game["hunter_shot_target"] is not None
+    ]
+
+    if not games_with_hunter:
+        print("没有猎人开枪的数据可以绘图")
+        return
+
+    # 准备数据
+    game_numbers = list(range(1, len(games_with_hunter) + 1))
+    hit_werewolf = [
+        1 if game["hunter_shot_hit_werewolf"] else 0 for game in games_with_hunter
+    ]
+
+    # 计算移动平均准确率
+    moving_avg_accuracy = []
+    for i in range(len(hit_werewolf)):
+        start_idx = max(0, i - window_size + 1)
+        window = hit_werewolf[start_idx : i + 1]
+        accuracy = (sum(window) / len(window)) * 100
+        moving_avg_accuracy.append(accuracy)
+
+    # 计算线性回归
+    import numpy as np
+
+    x = np.array(game_numbers)
+    y = np.array(moving_avg_accuracy)
+    coefficients = np.polyfit(x, y, 1)
+    linear_trend = np.poly1d(coefficients)
+    trend_line = linear_trend(x)
+
+    # 创建图表
+    fig, ax1 = plt.subplots(1, 1, figsize=(14, 6), facecolor=COLOR_BACKGROUND)
+    ax1.set_facecolor(COLOR_BACKGROUND)
+
+    # 绘制移动平均线
+    ax1.plot(
+        game_numbers,
+        moving_avg_accuracy,
+        color=COLOR_SECONDARY,
+        linewidth=2.5,
+        label=f"{window_size}场移动平均准确率",
+        alpha=0.9,
+    )
+
+    # 添加线性回归趋势线
+    slope = coefficients[0]
+    ax1.plot(
+        game_numbers,
+        trend_line,
+        color=COLOR_PRIMARY,
+        linestyle="--",
+        linewidth=2.5,
+        label=f"线性回归 (斜率={slope:.4f})",
+        alpha=0.8,
+    )
+
+    # 添加理论随机概率基准线
+    theoretical_prob = 33.33
+    ax1.axhline(
+        y=theoretical_prob,
+        color=COLOR_ACCENT,
+        linestyle=":",
+        linewidth=2,
+        label=f"理论随机概率 ({theoretical_prob:.1f}%)",
+        alpha=0.7,
+    )
+
+    ax1.set_xlabel(
+        "游戏编号（时间顺序）", fontsize=16, fontweight="bold", color="white"
+    )
+    ax1.set_ylabel("猎人开枪准确率 (%)", fontsize=16, fontweight="bold", color="white")
+    ax1.set_title(
+        "猎人开枪准确率随迭代次数变化趋势",
+        fontsize=20,
+        fontweight="bold",
+        pad=20,
+        color="white",
+    )
+
+    # 设置图例样式
+    legend = ax1.legend(loc="upper right", fontsize=14, framealpha=0.95)
+    legend.get_frame().set_facecolor(COLOR_BACKGROUND)
+    legend.get_frame().set_edgecolor("white")
+    legend.get_frame().set_linewidth(1.5)
+    for text in legend.get_texts():
+        text.set_color("white")
+
+    ax1.grid(True, alpha=0.15, linestyle="--", linewidth=0.5, color="white")
+    ax1.set_ylim(0, 100)
+    ax1.set_xlim(0, len(game_numbers) + 1)
+
+    # 设置坐标轴刻度颜色和字体大小
+    ax1.tick_params(axis="x", colors="white", labelsize=13, width=1.5)
+    ax1.tick_params(axis="y", colors="white", labelsize=13, width=1.5)
+
+    # 设置坐标轴边框颜色和粗细
+    for spine in ax1.spines.values():
+        spine.set_edgecolor("white")
+        spine.set_alpha(0.5)
+        spine.set_linewidth(1.5)
+
+    plt.tight_layout()
+
+    # 保存图表
+    output_file = "./doc/public/hunter_shot_accuracy_trend.png"
+    plt.savefig(output_file, dpi=150, bbox_inches="tight")
+    print(f"\n猎人开枪准确率趋势图已保存到: {output_file}")
+
+    plt.show()
+
+    # 计算趋势分析
+    print("\n" + "=" * 80)
+    print("猎人开枪准确率趋势分析")
+    print("=" * 80)
+
+    third = len(hit_werewolf) // 3
+    if third > 0:
+        first_third_accuracy = (sum(hit_werewolf[:third]) / third) * 100
+        last_third_accuracy = (sum(hit_werewolf[-third:]) / third) * 100
+        change = last_third_accuracy - first_third_accuracy
+
+        print(f"前1/3游戏（1-{third}场）准确率: {first_third_accuracy:.2f}%")
+        print(
+            f"后1/3游戏（{len(hit_werewolf)-third+1}-{len(hit_werewolf)}场）准确率: {last_third_accuracy:.2f}%"
+        )
+        print(f"变化: {change:+.2f}%")
+
+        if change > 5:
+            print("✓ 猎人开枪准确率呈上升趋势，AI在学习改进")
+        elif change < -5:
+            print("✗ 猎人开枪准确率呈下降趋势")
+        else:
+            print("→ 猎人开枪准确率基本稳定")
+
+
 def main():
     # 游戏日志目录
     logs_dir = r".\.training\game_logs"
@@ -551,6 +954,8 @@ def main():
     if complete_games:
         plot_rounds_trend(complete_games, window_size=20)
         plot_first_round_accuracy_trend(complete_games, window_size=20)
+        plot_witch_poison_accuracy_trend(complete_games, window_size=20)
+        plot_hunter_shot_accuracy_trend(complete_games, window_size=20)
 
 
 if __name__ == "__main__":
