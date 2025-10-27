@@ -304,22 +304,30 @@ class GameLogParser:
             )
             self.event_counter += 1
 
-        # Discussion
-        discussion_pattern = r"(\w+): ([^\n]+(?:\n(?!\w+:)[^\n]+)*)"
-        discussions = re.findall(discussion_pattern, content)
+        # Discussion - only parse content after [DISCUSSION] marker
+        discussion_section = re.search(
+            r"\[DISCUSSION\].*?\n(.*?)(?=\[VOTING\]|\[ELIMINATED\]|$)",
+            content,
+            re.DOTALL,
+        )
 
-        for speaker, statement in discussions:
-            if speaker in self.players:
-                self.events.append(
-                    GameEvent(
-                        round_num=self.current_round,
-                        phase="day",
-                        event_type="discussion",
-                        data={"speaker": speaker, "statement": statement.strip()},
-                        timestamp=self.event_counter,
+        if discussion_section:
+            discussion_content = discussion_section.group(1)
+            discussion_pattern = r"(\w+): ([^\n]+(?:\n(?!\w+:)[^\n]+)*)"
+            discussions = re.findall(discussion_pattern, discussion_content)
+
+            for speaker, statement in discussions:
+                if speaker in self.players:
+                    self.events.append(
+                        GameEvent(
+                            round_num=self.current_round,
+                            phase="day",
+                            event_type="discussion",
+                            data={"speaker": speaker, "statement": statement.strip()},
+                            timestamp=self.event_counter,
+                        )
                     )
-                )
-                self.event_counter += 1
+                    self.event_counter += 1
 
     def _parse_voting(self, content: str):
         """Parse voting phase"""
