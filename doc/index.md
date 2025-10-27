@@ -267,11 +267,15 @@ python run_selfplay.py -n 10 -p 4 -m modelscope_chat/deepseek_chat
 
 ## 📊 成长对比实验
 
+第一轮投中狼人概率从 17.12% 提升至 19.07%，基础推理能力缓慢提升
+
 ![](./public/first_round_accuracy_trend.png)
 
 ---
 
 ## 📊 成长对比实验
+
+女巫毒药准确率从 52.00% 跃升至 68.00%，毒中狼人概率显著提高
 
 ![](./public/witch_poison_accuracy_trend.png)
 
@@ -279,18 +283,22 @@ python run_selfplay.py -n 10 -p 4 -m modelscope_chat/deepseek_chat
 
 ## 📊 成长对比实验
 
+猎人开枪准确率从 31.43% 提升至 41.43%，带走狼人能力明显进步
+
 ![](./public/hunter_shot_accuracy_trend.png)
 
 ---
 
 ## 🎬 现场对战演示
 
-## emoji 智能体学习链
+- [🔫 对战演示链接](#)
 
-- 🧙‍♀️ 女巫学习链
-- 🕵️‍♂️ 预言家学习链
-- 🐺 狼人学习链
-- 👨‍🌾 村民学习链
+## 🎯 智能体学习链
+
+- 🧙‍♀️ [女巫学习链](#)
+- 🕵️‍♂️ [预言家学习链](#)
+- 🐺 [狼人学习链](#)
+- 👨‍🌾 [村民学习链](#)
 
 ---
 
