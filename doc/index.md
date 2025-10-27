@@ -45,6 +45,13 @@ b {
 a {
   color: var(--secondary);
 }
+
+.center{
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+}
 </style>
 
 ![bg opacity:0.1](./public/teaser.png)
@@ -172,7 +179,7 @@ a {
 - 实时提示词工程优化（已实现）
 - 模型微调与强化学习进阶（规划中）
 
----
+<!-- ---
 
 ## 📝 提示词迭代优化示例
 
@@ -216,7 +223,7 @@ a {
 
 ```
 作为狼人，前期可以实行倒钩战术，后期抗推真预言家及其团队。
-```
+``` -->
 
 ---
 
@@ -238,6 +245,14 @@ python run_selfplay.py -n 10 -p 4 -m modelscope_chat/deepseek_chat
 
 ---
 
+## 🖥️ 对局可视化界面
+
+<div class="center">
+  <img width=62% src="./public/screenshot.png">
+</div>
+
+---
+
 ![bg opacity:0.1](./public/teaser.png)
 
 ## 1. 项目愿景
@@ -255,6 +270,18 @@ python run_selfplay.py -n 10 -p 4 -m modelscope_chat/deepseek_chat
 进行了超 **800 局 9 人** + **100 局 12 人** 板型的混合对局
 
 ![](./public/rounds_trend_analysis.png)
+
+---
+
+## 🧙‍♀️ 女巫迭代案例
+
+---
+
+## 🐺 狼人迭代案例
+
+---
+
+## 👨‍🌾 村民迭代案例
 
 ---
 
