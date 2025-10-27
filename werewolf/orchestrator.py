@@ -118,6 +118,12 @@ class WerewolfGameOrchestrator:
         self._log(f"Created {len(self.agents)} agents")
         self._log(f"Werewolf team: {', '.join(werewolves)}")
 
+        # Log all player roles
+        self._log("\nPlayer Roles:")
+        for player_name in sorted(self.game.player_names):
+            role = self.game.state.roles[player_name]
+            self._log(f"  {player_name}: {role.value}")
+
     def run_game(self) -> str:
         """
         Run the complete game until win condition

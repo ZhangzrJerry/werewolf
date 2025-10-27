@@ -81,6 +81,18 @@ class GameLogParser:
             ]
             self.game_info["werewolf_team"] = werewolf_names
 
+        # Parse all player roles
+        role_section = re.search(r"Player Roles:\n((?:\s+\w+:\s+\w+\n?)+)", content)
+        if role_section:
+            role_lines = role_section.group(1).strip().split("\n")
+            for line in role_lines:
+                match = re.match(r"\s+(\w+):\s+(\w+)", line)
+                if match:
+                    player_name = match.group(1)
+                    role = match.group(2)
+                    if player_name in self.players:
+                        self.players[player_name].role = role
+
     def _parse_round(self, round_content: str):
         """Parse a single round"""
         # Night phase
