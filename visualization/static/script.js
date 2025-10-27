@@ -322,7 +322,7 @@ function displayEvent(event) {
             html += `<p>角色: ${roleTranslations[event.data.role] || event.data.role}</p>`;
             html += `</div>`;
             break;
-        
+
         case 'hunter_skill':
             html += `<div class="hunter-skill">`;
             html += `<p>🎯 <strong>猎人技能触发!</strong></p>`;
