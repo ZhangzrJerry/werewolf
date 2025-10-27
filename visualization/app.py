@@ -20,7 +20,7 @@ def get_game_logs_directory():
 
 
 def get_available_logs():
-    """Get list of available game log files"""
+    """Get list of available game log files (only completed games)"""
     logs_dir = get_game_logs_directory()
 
     if not logs_dir.exists():
@@ -28,14 +28,26 @@ def get_available_logs():
 
     log_files = []
     for file_path in logs_dir.glob("*.txt"):
-        log_files.append(
-            {
-                "filename": file_path.name,
-                "path": str(file_path),
-                "size": file_path.stat().st_size,
-                "modified": file_path.stat().st_mtime,
-            }
-        )
+        # Quick check if game completed normally by looking for GAME OVER marker
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                content = f.read()
+                if (
+                    "============================================================\nGAME OVER\n============================================================"
+                    in content
+                ):
+                    log_files.append(
+                        {
+                            "filename": file_path.name,
+                            "path": str(file_path),
+                            "size": file_path.stat().st_size,
+                            "modified": file_path.stat().st_mtime,
+                        }
+                    )
+        except Exception as e:
+            # Skip files that can't be read
+            print(f"Warning: Could not read {file_path.name}: {e}")
+            continue
 
     # Sort by modification time (newest first)
     log_files.sort(key=lambda x: x["modified"], reverse=True)
@@ -75,6 +87,11 @@ def api_load_log(filename):
         try:
             parser = GameLogParser(str(log_path))
             parsed_data = parser.parse()
+
+            # Check if game completed normally
+            if not parsed_data["game_info"].get("game_completed", False):
+                return jsonify({"error": "This game did not complete normally"}), 400
+
             game_data_cache[filename] = parsed_data
         except Exception as e:
             return jsonify({"error": f"Failed to parse log file: {str(e)}"}), 500

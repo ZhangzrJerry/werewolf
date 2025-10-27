@@ -451,6 +451,9 @@ class GameLogParser:
         if game_over_section:
             game_over_content = game_over_section.group(1)
 
+            # Mark game as completed successfully
+            self.game_info["game_completed"] = True
+
             # Winner
             winner_match = re.search(r"\[WINNER\] (\w+)", game_over_content)
             if winner_match:
@@ -470,3 +473,6 @@ class GameLogParser:
                     self.players[player_name].role = role
 
             self.game_info["final_roles"] = {name: role for name, role in roles}
+        else:
+            # Game did not complete normally
+            self.game_info["game_completed"] = False
