@@ -243,6 +243,28 @@ header h1 {
     font-style: italic;
 }
 
+.hunter-skill {
+    background: linear-gradient(135deg, #ffeaa7 0%, #fdcb6e 100%);
+    border: 3px solid #d63031;
+    padding: 20px;
+    border-radius: 10px;
+    margin: 10px 0;
+    font-weight: bold;
+    box-shadow: 0 5px 15px rgba(214, 48, 49, 0.3);
+    animation: pulse 1.5s ease-in-out;
+}
+
+.hunter-skill p {
+    margin: 8px 0;
+    color: #2d3436;
+}
+
+.hunter-skill p:first-child {
+    font-size: 1.2em;
+    color: #d63031;
+    text-align: center;
+}
+
 /* Progress Bar */
 .progress-bar {
     width: 100%;

@@ -28,7 +28,8 @@ const eventTypeTranslations = {
     'discussion': '讨论发言',
     'vote': '投票',
     'vote_summary': '投票汇总',
-    'elimination': '淘汰'
+    'elimination': '淘汰',
+    'hunter_skill': '猎人技能'
 };
 
 // Role translations
@@ -319,6 +320,14 @@ function displayEvent(event) {
             html += `<div class="death-announcement">`;
             html += `<p>⚖️ <strong>${event.data.player}</strong> 被投票淘汰</p>`;
             html += `<p>角色: ${roleTranslations[event.data.role] || event.data.role}</p>`;
+            html += `</div>`;
+            break;
+        
+        case 'hunter_skill':
+            html += `<div class="hunter-skill">`;
+            html += `<p>🎯 <strong>猎人技能触发!</strong></p>`;
+            html += `<p>🔫 猎人 <strong>${event.data.hunter}</strong> 开枪射杀了 <strong>${event.data.target}</strong></p>`;
+            html += `<p>💀 ${event.data.target} 的角色是: <strong>${roleTranslations[event.data.target_role] || event.data.target_role}</strong></p>`;
             html += `</div>`;
             break;
 

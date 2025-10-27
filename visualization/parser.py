@@ -389,6 +389,38 @@ class GameLogParser:
                 )
                 self.event_counter += 1
 
+            # Hunter skill activation
+            hunter_skill_match = re.search(
+                rf"\[HUNTER SKILL\] {player_name} activates hunter ability!\n  {player_name} shoots (\w+)!\n  (\w+) \((\w+)\) is killed!",
+                content,
+            )
+            if hunter_skill_match:
+                target = hunter_skill_match.group(1)
+                target_confirm = hunter_skill_match.group(2)
+                target_role = hunter_skill_match.group(3)
+
+                self.events.append(
+                    GameEvent(
+                        round_num=self.current_round,
+                        phase="voting",
+                        event_type="hunter_skill",
+                        data={
+                            "hunter": player_name,
+                            "target": target,
+                            "target_role": target_role,
+                        },
+                        timestamp=self.event_counter,
+                    )
+                )
+                self.event_counter += 1
+
+                # Update target player status
+                if target in self.players:
+                    self.players[target].status = "dead"
+                    self.players[target].role = target_role
+                    self.players[target].death_round = self.current_round
+                    self.players[target].death_reason = "hunter_shot"
+
     def _parse_game_over(self, content: str):
         """Parse game over information"""
         game_over_section = re.search(
