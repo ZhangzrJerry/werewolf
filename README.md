@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="doc/public/teaser.png" alt="teaser" width="70" style="border-radius: 100%;" />
+<img src="visualization/static/teaser-modified.png" alt="teaser" width="70" style="border-radius: 100%;" />
 
 # Werewolf Game · 会学习的狼人杀智能体
 
