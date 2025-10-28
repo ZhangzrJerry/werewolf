@@ -1150,3 +1150,28 @@ header h1 {
     text-align: center;
     margin: 15px 0;
 }
+
+/* Keyword highlighting styles */
+.keyword-highlight {
+    background: linear-gradient(135deg, #ff6b6b, #ff8e8e);
+    color: white;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: bold;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 2px 4px rgba(255, 107, 107, 0.3);
+    transition: all 0.2s ease;
+}
+
+.keyword-highlight:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(255, 107, 107, 0.4);
+}
+
+.performance-review {
+    margin-top: 10px;
+    font-size: 0.9em;
+    color: #666;
+    border-top: 1px solid #eee;
+    padding-top: 10px;
+}

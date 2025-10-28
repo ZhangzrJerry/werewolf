@@ -178,10 +178,9 @@ window.STATIC_DEPLOYMENT = true;
 const originalFetch = window.fetch;
 window.fetch = async function(...args) {
     try {
-        const response = await originalFetch(...args);
-        if (!response.ok && window.STATIC_DEPLOYMENT) {
+        const url = args[0];
+        if (window.STATIC_DEPLOYMENT) {
             // For static deployment, some APIs are not available
-            const url = args[0];
             if (url.includes('/api/state') || url.includes('/api/reset') || 
                 url.includes('/api/prev') || url.includes('/api/next') || 
                 url.includes('/api/jump') || url.includes('/api/overview')) {
@@ -192,12 +191,36 @@ window.fetch = async function(...args) {
                 });
             }
         }
+        
+        const response = await originalFetch(...args);
         return response;
     } catch (error) {
         console.error('Fetch error:', error);
+        // Return a mock response for failed requests in static deployment
+        if (window.STATIC_DEPLOYMENT) {
+            return new Response(JSON.stringify({error: 'Network error in static deployment'}), {
+                status: 200,
+                headers: {'Content-Type': 'application/json'}
+            });
+        }
         throw error;
     }
 };
+
+// Disable interactive features in static deployment
+if (window.STATIC_DEPLOYMENT) {
+    // Override functions that depend on state management APIs
+    window.startPlaying = function() {
+        console.warn('Game playback is not available in static deployment');
+        alert('游戏回放功能在静态部署中不可用，请直接查看游戏总览。');
+    };
+    
+    window.stopPlaying = function() {};
+    window.stepForward = function() {};
+    window.stepBackward = function() {};
+    window.resetToBeginning = function() {};
+    window.jumpToProgress = function() {};
+}
 
 """
 

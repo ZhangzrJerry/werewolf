@@ -43,6 +43,50 @@ const roleTranslations = {
     'unknown': '未知'
 };
 
+// Helper function to add role information to player names in text
+function addRoleInfoToText(text, players) {
+    if (!text || !players) return text;
+
+    let processedText = text;
+
+    // For each player, replace their name with name + role
+    Object.values(players).forEach(player => {
+        const playerName = player.name;
+        const roleName = roleTranslations[player.role] || player.role;
+
+        // Create a regex to match the player name when it appears as a standalone word
+        // This avoids partial matches within other words
+        const regex = new RegExp(`\\b${playerName}\\b`, 'g');
+
+        // Replace with name and role in parentheses
+        const replacement = `${playerName}(${roleName})`;
+
+        processedText = processedText.replace(regex, replacement);
+    });
+
+    return processedText;
+}
+
+// Helper function to highlight keywords in text
+function highlightKeywords(text, keywords = []) {
+    if (!text || !keywords || keywords.length === 0) return text;
+
+    let processedText = text;
+
+    // Default keywords for all content
+    const defaultKeywords = ['狼人', '村民', '预言家', '女巫', '猎人', '守卫', '投票', '查验', '毒药', '解药', '保护', '开枪'];
+
+    // Combine default keywords with any additional ones
+    const allKeywords = [...new Set([...defaultKeywords, ...keywords])];
+
+    allKeywords.forEach(keyword => {
+        const regex = new RegExp(`(${keyword})`, 'gi');
+        processedText = processedText.replace(regex, '<span class="keyword-highlight">$1</span>');
+    });
+
+    return processedText;
+}
+
 // Initialize
 document.addEventListener('DOMContentLoaded', function () {
     loadAvailableLogs();
@@ -123,9 +167,23 @@ async function loadLog(filename) {
 
 // Display game information
 function displayGameInfo(gameInfo) {
-    document.getElementById('game-type').textContent = gameInfo.game_type || '-';
-    document.getElementById('rounds-played').textContent = gameInfo.rounds_played || '-';
-    document.getElementById('winner').textContent = gameInfo.winner || '-';
+    // Check if elements exist before trying to set their content
+    const gameTypeElement = document.getElementById('game-type');
+    const roundsPlayedElement = document.getElementById('rounds-played');
+    const winnerElement = document.getElementById('winner');
+
+    if (gameTypeElement) {
+        gameTypeElement.textContent = gameInfo.game_type || '-';
+    }
+    if (roundsPlayedElement) {
+        roundsPlayedElement.textContent = gameInfo.rounds_played || '-';
+    }
+    if (winnerElement) {
+        winnerElement.textContent = gameInfo.winner || '-';
+    }
+
+    // Store game info for use in other functions
+    console.log('Game Info:', gameInfo);
 }
 
 // Display players in a grid
@@ -191,10 +249,20 @@ async function updateState() {
         const progress = state.total_events > 0
             ? (state.event_index / state.total_events) * 100
             : 0;
-        document.getElementById('progress-fill').style.width = progress + '%';
-        document.getElementById('progress-handle').style.left = progress + '%';
-        document.getElementById('progress-text').textContent =
-            `${state.event_index} / ${state.total_events}`;
+
+        const progressFill = document.getElementById('progress-fill');
+        const progressHandle = document.getElementById('progress-handle');
+        const progressText = document.getElementById('progress-text');
+
+        if (progressFill) {
+            progressFill.style.width = progress + '%';
+        }
+        if (progressHandle) {
+            progressHandle.style.left = progress + '%';
+        }
+        if (progressText) {
+            progressText.textContent = `${state.event_index} / ${state.total_events}`;
+        }
 
         // Update player cards
         updatePlayerCards(state.player_states);
@@ -204,10 +272,15 @@ async function updateState() {
 
         // Update phase indicator
         if (state.current_event) {
-            document.getElementById('current-round').textContent =
-                `回合 ${state.current_event.round_num}`;
-            document.getElementById('current-phase').textContent =
-                `阶段: ${phaseTranslations[state.current_event.phase] || state.current_event.phase}`;
+            const currentRound = document.getElementById('current-round');
+            const currentPhase = document.getElementById('current-phase');
+
+            if (currentRound) {
+                currentRound.textContent = `回合 ${state.current_event.round_num}`;
+            }
+            if (currentPhase) {
+                currentPhase.textContent = `阶段: ${phaseTranslations[state.current_event.phase] || state.current_event.phase}`;
+            }
         }
 
         // Stop playing if finished
@@ -295,9 +368,21 @@ function displayEvent(event) {
             break;
 
         case 'last_words':
+            const lastWordsPlayer = event.data.player;
+            const lastWordsStatement = event.data.statement;
+            const lastWordsPlayerInfo = currentGameData && currentGameData.players ? currentGameData.players[lastWordsPlayer] : null;
+            const lastWordsRoleInfo = lastWordsPlayerInfo ? `(${roleTranslations[lastWordsPlayerInfo.role] || lastWordsPlayerInfo.role})` : '';
+
+            // Apply role info and keyword highlighting to the statement
+            let processedLastWords = lastWordsStatement;
+            if (currentGameData && currentGameData.players) {
+                processedLastWords = addRoleInfoToText(lastWordsStatement, currentGameData.players);
+            }
+            processedLastWords = highlightKeywords(processedLastWords);
+
             html += `<div class="last-words">`;
-            html += `<p><strong>${event.data.player}</strong> 的遗言:</p>`;
-            html += `<p>"${event.data.statement}"</p>`;
+            html += `<p><strong>💀 ${lastWordsPlayer}${lastWordsRoleInfo} 的遗言:</strong></p>`;
+            html += `<p>"${processedLastWords}"</p>`;
             html += `</div>`;
             break;
 
@@ -308,9 +393,21 @@ function displayEvent(event) {
             break;
 
         case 'discussion':
+            const speaker = event.data.speaker;
+            const statement = event.data.statement;
+            const speakerInfo = currentGameData && currentGameData.players ? currentGameData.players[speaker] : null;
+            const roleInfo = speakerInfo ? `(${roleTranslations[speakerInfo.role] || speakerInfo.role})` : '';
+
+            // Apply role info and keyword highlighting to the statement
+            let processedStatement = statement;
+            if (currentGameData && currentGameData.players) {
+                processedStatement = addRoleInfoToText(statement, currentGameData.players);
+            }
+            processedStatement = highlightKeywords(processedStatement);
+
             html += `<div class="discussion-bubble">`;
-            html += `<div class="speaker">💬 ${event.data.speaker}:</div>`;
-            html += `<div class="statement">${event.data.statement}</div>`;
+            html += `<div class="speaker">💬 ${speaker}${roleInfo}:</div>`;
+            html += `<div class="statement">${processedStatement}</div>`;
             html += `</div>`;
             break;
 
@@ -845,11 +942,14 @@ function populateReviewsAndLessons(overview) {
 
     // Game summary
     if (analysis.game_summary) {
+        let processedSummary = addRoleInfoToText(analysis.game_summary, overview.players);
+        processedSummary = highlightKeywords(processedSummary);
+
         html += `
             <div class="review-section">
                 <h4>📋 游戏总结</h4>
                 <div class="review-item">
-                    ${analysis.game_summary}
+                    ${processedSummary}
                 </div>
             </div>
         `;
@@ -862,10 +962,16 @@ function populateReviewsAndLessons(overview) {
                 <h4>🔄 关键转折点</h4>
         `;
         analysis.key_turning_points.forEach(point => {
+            let processedDescription = addRoleInfoToText(point.description, overview.players);
+            processedDescription = highlightKeywords(processedDescription);
+
+            let processedImpact = addRoleInfoToText(point.impact, overview.players);
+            processedImpact = highlightKeywords(processedImpact);
+
             html += `
                 <div class="review-item turning-point">
-                    <strong>第${point.round}回合:</strong> ${point.description}<br>
-                    <small>${point.impact}</small>
+                    <strong>第${point.round}回合:</strong> ${processedDescription}<br>
+                    <small>${processedImpact}</small>
                 </div>
             `;
         });
@@ -874,11 +980,14 @@ function populateReviewsAndLessons(overview) {
 
     // MVP analysis
     if (analysis.mvp_analysis) {
+        let processedMvp = addRoleInfoToText(analysis.mvp_analysis, overview.players);
+        processedMvp = highlightKeywords(processedMvp);
+
         html += `
             <div class="review-section">
                 <h4>🏆 MVP分析</h4>
                 <div class="mvp-highlight">
-                    ${analysis.mvp_analysis}
+                    ${processedMvp}
                 </div>
             </div>
         `;
@@ -894,29 +1003,41 @@ function populateReviewsAndLessons(overview) {
 
         Object.entries(analysis.player_performance).forEach(([name, perf]) => {
             const playerInfo = overview.players[name];
+            const roleName = roleTranslations[playerInfo.role] || playerInfo.role;
+
+            // Process review text with role info and keywords
+            let processedReview = '';
+            if (perf.review) {
+                processedReview = addRoleInfoToText(perf.review, overview.players);
+                processedReview = highlightKeywords(processedReview);
+            }
+
             html += `
                 <div class="performance-card">
-                    <strong>${name}</strong><br>
-                    <small>${playerInfo.role} | ${playerInfo.final_status}</small><br>
+                    <strong>${name}(${roleName})</strong><br>
+                    <small>${roleName} | ${playerInfo.final_status}</small><br>
                     存活: ${perf.survival_rounds}回合<br>
                     投票: ${perf.votes_cast_count}次<br>
                     被投: ${perf.votes_received_count}次<br>
                     <div class="performance-rating ${perf.performance_rating}">${perf.performance_rating}</div>
-                    ${perf.review ? `<div class="performance-review">${perf.review}</div>` : ''}
+                    ${processedReview ? `<div class="performance-review">${processedReview}</div>` : ''}
                 </div>
             `;
         });
         html += '</div></div>';
     }
 
-    // Lessons learned (remove strategic insights section)
+    // Lessons learned
     if (analysis.lessons_learned && analysis.lessons_learned.length > 0) {
         html += `
             <div class="review-section">
                 <h4>📚 经验教训</h4>
         `;
         analysis.lessons_learned.forEach(lesson => {
-            html += `<div class="review-item lesson-learned">${lesson}</div>`;
+            let processedLesson = addRoleInfoToText(lesson, overview.players);
+            processedLesson = highlightKeywords(processedLesson);
+
+            html += `<div class="review-item lesson-learned">${processedLesson}</div>`;
         });
         html += '</div>';
     }
@@ -928,11 +1049,20 @@ function populateReviewsAndLessons(overview) {
                 <h4>⚠️ 关键失误分析</h4>
         `;
         analysis.critical_mistakes.forEach(mistake => {
+            let processedDescription = addRoleInfoToText(mistake.description, overview.players);
+            processedDescription = highlightKeywords(processedDescription);
+
+            let processedImpact = addRoleInfoToText(mistake.impact, overview.players);
+            processedImpact = highlightKeywords(processedImpact);
+
+            let processedLesson = addRoleInfoToText(mistake.lesson, overview.players);
+            processedLesson = highlightKeywords(processedLesson);
+
             html += `
                 <div class="review-item critical-mistake">
-                    <strong>失误:</strong> ${mistake.description}<br>
-                    <strong>影响:</strong> ${mistake.impact}<br>
-                    <strong>改进建议:</strong> ${mistake.lesson}
+                    <strong>失误:</strong> ${processedDescription}<br>
+                    <strong>影响:</strong> ${processedImpact}<br>
+                    <strong>改进建议:</strong> ${processedLesson}
                 </div>
             `;
         });
