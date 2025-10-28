@@ -1,0 +1,68 @@
+{
+  "per_player": {
+    "Alice": "Good early pressure but became a clear target. Should have been more cautious after being saved by witch. Tip: Don't reveal you were saved unless necessary.",
+    "Bob": "Started reasonable pressure but became central to wolf strategy. Failed to defend effectively. Tip: Have stronger counter-arguments when under coordinated attack.",
+    "Charlie": "Followed consensus without adding unique insights. Missed opportunities to lead. Tip: Develop independent reads rather than following trends.",
+    "David": "Excellent wolf play, coordinated with pack on voting and discussion. Created effective misdirection. Tip: Maintain this level of coordination throughout.",
+    "Eve": "Wasted save early, kept poison too long. Poor voting patterns revealed alignment. Tip: Use poison more aggressively when wolves are identified.",
+    "Frank": "Recovered well from early suspicion with pack support. Good at blending. Tip: Vary discussion patterns to avoid detection.",
+    "Grace": "Spotted wolf coordination pattern early. Strong analytical play. Tip: Push harder on confirmed patterns to convince others.",
+    "Henry": "Good protection choices but failed to coordinate with seer. Tip: Communicate secretly with confirmed good roles when possible.",
+    "Ivy": "Confirmed wolf but didn't share info effectively. Checked wrong targets. Tip: Share findings strategically before elimination.",
+    "Jack": "Failed to use hunter threat effectively. Followed poor votes. Tip: Use your death power as leverage in discussions.",
+    "Kate": "Solid wolf team play, consistent voting with pack. Good at maintaining cover. Tip: Vary discussion style to avoid pattern recognition.",
+    "Leo": "Smart wolf play, created doubt about counter-wagons. Good at redirecting suspicion. Tip: Continue using reasonable doubt tactics."
+  },
+  "overall": "Werewolves won through superior coordination and information control. They created effective misdirection in discussions and maintained voting discipline. Villagers failed to capitalize on early wolf sightings and the witch wasted her poison. The guardian and seer never coordinated effectively, allowing wolves to control the narrative.",
+  "lessons": {
+    "Villager": [
+      "Pressure quiet players with specific reasoning not random accusations",
+      "Watch for coordinated discussion patterns among potential wolf teams",
+      "Question players who echo sentiments without original analytical thoughts",
+      "Vote consistently with your stated suspicions to build credible image",
+      "Defend yourself with concrete logical arguments when you are attacked",
+      "Avoid forming counter-wagons without solid evidence or clear reasoning"
+    ],
+    "Werewolf": [
+      "Coordinate voting patterns with pack members to control eliminations",
+      "Use similar discussion structures to appear coordinated like villagers",
+      "Create reasonable doubt about counter-wagons forming against your pack",
+      "Blend by questioning active players not just focusing on quiet ones",
+      "Maintain consistent voting with your pack members to avoid suspicion",
+      "Switch from silent observer to active contributor at strategic moments"
+    ],
+    "Seer": [
+      "Share your findings strategically before you might be eliminated",
+      "Check players involved in suspicious coordination or voting patterns",
+      "Prioritize checking suspicious players over confirming obvious villagers",
+      "Coordinate secretly with the Guardian when your identity is known",
+      "Verify players leading suspicious counter-arguments against confirmed villagers",
+      "Reveal to confirm multiple players' alignments at once for maximum impact"
+    ],
+    "Witch": [
+      "Use poison aggressively when wolves are identified with high confidence",
+      "Do not save players who are obvious repeated wolf elimination targets",
+      "Coordinate save and poison actions with Seer information when possible",
+      "Keep your actions and identity hidden until absolutely necessary",
+      "Use poison to break voting deadlocks and eliminate suspicious players",
+      "Consider poisoning players with consistently suspicious voting patterns"
+    ],
+    "Guardian": [
+      "Protect players who are likely to provide key information next day",
+      "Coordinate protection targets with the Seer's findings and suspicions",
+      "Avoid repeatedly protecting the same obvious high-value targets",
+      "Protect yourself when no clear information or better target exists",
+      "Consider protecting quiet players who might be key information roles",
+      "Balance protection between the Seer and other potential information sources"
+    ],
+    "Hunter": [
+      "Announce your role strategically to deter wolves from eliminating you",
+      "Vote carefully as your death can eliminate a valuable ally",
+      "Use your death threat to break voting impasses and force outcomes",
+      "Coordinate with confirmed good players before you are eliminated",
+      "Do not reveal your role too early unless it is absolutely necessary",
+      "Take calculated risks with your voting to maximize post-death impact"
+    ]
+  },
+  "winner": "werewolves"
+}

@@ -1,0 +1,21 @@
+{
+  "rules": [
+    "Analyze night kill patterns for wolf team logic",
+    "Claim role only when under serious vote pressure for elimination",
+    "Save heal for confirmed town power roles or yourself",
+    "Use poison on suspicious quiet players avoiding engagement",
+    "Reveal heal usage strategically to confirm your role authenticity",
+    "Coordinate with seer for optimal protection and elimination targets",
+    "Avoid wasting both potions early without confirmed information",
+    "Balance self-preservation with town benefit in potion usage",
+    "Use poison early on highly suspicious players to confirm alignments",
+    "Save heal for confirmed villagers or critical special roles",
+    "Coordinate with Seer for confirmed wolf targets when using poison",
+    "Do not waste both potions by being too passive or hesitant",
+    "Use potions strategically to swing game balance and voting power",
+    "Consider saving heal for yourself if you are being targeted",
+    "Reveal your role and actions only when it benefits the village"
+  ],
+  "updated_at": "2025-10-28T16:45:12.519479",
+  "total_updates": 13
+}

@@ -1,0 +1,21 @@
+{
+  "rules": [
+    "Suspect players who actively avoid seer checks.",
+    "Prioritize checking players with conflicting votes.",
+    "Share findings before being eliminated by wolves",
+    "Verify players pushing strong early game narratives",
+    "Build trust with one confirmed player to share results",
+    "Check players who frequently defend suspected wolves",
+    "Only reveal your identity for a crucial vote swing",
+    "Watch voting patterns of players you have checked",
+    "Reveal immediately when you have confirmed wolf information",
+    "Check quiet players who systematically avoid attention and scrutiny",
+    "Verify players coordinating too smoothly for potential wolf teams",
+    "Track who votes against your findings to identify wolf resistance",
+    "Build trust with confirmed town before revealing your role",
+    "Prioritize checking players with conflicting voting and argument patterns",
+    "Share findings before night phase to prevent information loss"
+  ],
+  "updated_at": "2025-10-28T16:44:13.626451",
+  "total_updates": 12
+}

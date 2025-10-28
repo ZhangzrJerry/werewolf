@@ -1,0 +1,65 @@
+{
+  "per_player": {
+    "Alice": "Died night 1, no chance to play. Tip: As first victim, leave a legacy statement to guide villagers.",
+    "Bob": "Good wolf play, avoided early suspicion despite Seer check. Tip: Blend in more naturally, don't over-defend packmates.",
+    "Charlie": "Poor potion management, wasted self-protection. Tip: Save potion for confirmed good roles or self on critical nights.",
+    "David": "Pushed for info but got framed as suspicious. Tip: Frame questions neutrally to avoid wolf misdirection.",
+    "Eve": "Ineffective self-protection night 1. Tip: Protect high-value targets like Seer, not yourself early.",
+    "Frank": "Solid wolf, redirected suspicion well. Tip: Coordinate voting patterns with pack to avoid ties.",
+    "Grace": "Overly defensive, drew Seer's attention. Tip: Wolves should avoid strong reactions to mild accusations.",
+    "Henry": "Effective pack support in discussions. Tip: Reinforce pack narratives subtly without appearing coordinated.",
+    "Ivy": "Too quiet, self-voted. Tip: Contribute early to avoid being labeled low-priority lynch.",
+    "Jack": "Found two wolves but couldn't leverage info. Tip: Share findings carefully before you are killed.",
+    "Kate": "Hunter was too passive. Tip: Use threat of retaliation to deter wolves from killing you.",
+    "Leo": "Reasonable analysis but lacked influence. Tip: Build alliances early to amplify correct reads."
+  },
+  "overall": "Werewolves won due to superior coordination and information control. They eliminated key threats at night while creating enough town confusion during the day. The Seer was killed before revealing his wolf finds, and the Witch wasted her potion. Villagers failed to unite on clear suspects, allowing wolves to manipulate votes.",
+  "lessons": {
+    "Villager": [
+      "Push for concrete claims over behavior reads",
+      "Vote decisively to prevent no-lynch outcomes",
+      "Analyze who defends whom in discussion threads",
+      "Never self-vote as it helps the wolves",
+      "Question players avoiding clear stances early",
+      "Build trust with confirmed good roles immediately",
+      "Scrutinize late vote changes for wolf motives"
+    ],
+    "Werewolf": [
+      "Coordinate night kills on information roles first",
+      "Avoid over-defending packmates under town suspicion",
+      "Blend voting patterns with town consensus votes",
+      "Create misdirection by framing active villagers",
+      "Use tie votes strategically to protect pack",
+      "Kill confirmed good roles immediately when exposed",
+      "Spread suspicion evenly to avoid coordinated focus"
+    ],
+    "Seer": [
+      "Share verified wolf findings before you die",
+      "Check quiet players avoiding town attention",
+      "Do not reveal your role too early game",
+      "Corroborate your checks with other information",
+      "Trust your results over player persuasion",
+      "Coordinate protection with Guardian when known",
+      "Verify players making strong accusations carefully"
+    ],
+    "Guardian": [
+      "Protect the Seer consistently once revealed",
+      "Do not protect yourself on the first night",
+      "Predict wolf targets from discussion patterns",
+      "Rotate protection to avoid predictable sequences",
+      "Coordinate with Witch for double safety layers",
+      "Protect players making strong wolf accusations",
+      "Prioritize information roles over random villagers"
+    ],
+    "Hunter": [
+      "Announce role late-game to deter night kills",
+      "Vote carefully as your death decides lynch",
+      "Threaten retaliation against prime wolf suspects",
+      "Do not reveal your role during early game",
+      "Use final shot to eliminate confirmed wolves",
+      "Coordinate final shot with village consensus",
+      "Maintain voting consistency to avoid suspicion"
+    ]
+  },
+  "winner": "werewolves"
+}

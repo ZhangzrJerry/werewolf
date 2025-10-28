@@ -1,0 +1,80 @@
+{
+  "per_player": {
+    "Alice": "Died early, no mistakes. Good advice in last words. Tip: Early villagers should avoid drawing wolf attention.",
+    "Bob": "Survived night due to protection. Failed to capitalize on seer's info. Tip: Push confirmed info harder when revealed.",
+    "Charlie": "Hunter role wasted. Too passive in discussions. Tip: Use voting power to pressure suspicious players earlier.",
+    "David": "Wolf team coordinated well. Voted against seer effectively. Tip: Maintain consistent cover story throughout game.",
+    "Eve": "Witch failed to use powers. Saved nobody, poisoned nobody. Tip: Use save early on key players like seer.",
+    "Frank": "Created unnecessary suspicion on himself. Pushed for conflict too early. Tip: Blend in more naturally with village.",
+    "Grace": "Revealed check results too late. Got eliminated immediately. Tip: Share crucial info earlier if in danger.",
+    "Henry": "Effective wolf voting. Helped eliminate seer. Tip: Coordinate voting patterns to avoid suspicion.",
+    "Ivy": "Good wolf team play. Voted strategically with pack. Tip: Use quiet periods to observe rather than draw attention.",
+    "Jack": "Too passive as villager. Failed to analyze voting patterns. Tip: Question inconsistent voting blocs more aggressively.",
+    "Kate": "Good protection choices. But failed to protect seer. Tip: Prioritize protecting information roles over random villagers.",
+    "Leo": "Effective silent wolf strategy. Avoided drawing attention. Tip: Contribute just enough to seem like engaged villager."
+  },
+  "overall": "Werewolves won by eliminating seer early and controlling discussion narrative. Villagers failed to act on revealed information and wasted special powers. Wolf voting coordination overwhelmed scattered village votes.",
+  "lessons": {
+    "Villager": [
+      "Question consistent voting blocs immediately to disrupt wolf plans",
+      "Pressure quiet players to contribute early and reveal stances",
+      "Analyze who benefits from each elimination for wolf motives",
+      "Consider dead players' final words as valuable information sources",
+      "Force players avoiding key topics to take definitive positions",
+      "Identify players who echo others without adding original value",
+      "Scrutinize late vote changes and sudden bandwagon formations",
+      "Compare stated suspicions with actual voting records for consistency"
+    ],
+    "Werewolf": [
+      "Coordinate votes with teammates to eliminate key village threats",
+      "Blend in by agreeing with popular village opinions and logic",
+      "Use quiet periods strategically to avoid drawing unnecessary attention",
+      "Subtly steer discussion away from teammates under suspicion",
+      "Manufacture conflict between village players to create mislynch opportunities",
+      "Maintain consistent voting patterns that support your cover story",
+      "Avoid being the first or last vote on controversial eliminations",
+      "Appear helpful by summarizing discussions while omitting wolf-related points"
+    ],
+    "Seer": [
+      "Share crucial check results with trusted players before dying",
+      "Prioritize checking quiet or inconsistent voters for wolf indicators",
+      "Never reveal your role without confirmed protection or imminent death",
+      "Coordinate check reveals and protection timing with the Guardian",
+      "Watch for voting pattern shifts after you reveal your checks",
+      "Verify players who aggressively push suspicious narratives on others",
+      "Build trust gradually by confirming one reliable villager first",
+      "Consider checking players who survive multiple nights unexpectedly"
+    ],
+    "Witch": [
+      "Use save potion early on key roles claiming valuable information",
+      "Save poison for confirmed wolves or highly suspicious players",
+      "Never waste both potions in a single night unless absolutely certain",
+      "Coordinate potion usage with Seer's information and village consensus",
+      "Watch for players avoiding discussions about night kill motivations",
+      "Use poison when village has strong suspicions but lacks voting majority",
+      "Prioritize saving players who are likely wolf targets for information",
+      "Remain hidden until your potions can create maximum game impact"
+    ],
+    "Guardian": [
+      "Always protect information roles over random village players",
+      "Never protect the same player two nights in a row",
+      "Coordinate protection timing with Seer's planned reveal schedule",
+      "Watch for wolves predicting and avoiding your protection patterns",
+      "Consider protecting yourself if you're crucial and likely targeted",
+      "Prioritize players receiving unusual attention or accusations",
+      "Protect players who counter-accuse wolves to prevent night kills",
+      "Balance between predictable protection and random patterns strategically"
+    ],
+    "Hunter": [
+      "Use voting power to pressure suspicious players into revealing stances",
+      "Reveal role strategically before elimination to control your shot",
+      "Coordinate shot usage with confirmed good players for maximum impact",
+      "Never waste elimination shot on unconfirmed suspicions or gut feelings",
+      "Watch for wolves avoiding hunter-related discussions and accusations",
+      "Use elimination to take out key threats that village cannot lynch",
+      "Claim role when under pressure to deter wolves from killing you",
+      "Time your reveal to force wolves into difficult voting positions"
+    ]
+  },
+  "winner": "werewolves"
+}

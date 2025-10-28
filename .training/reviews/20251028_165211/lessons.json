@@ -1,0 +1,47 @@
+{
+  "Villager": [
+    "Push for concrete claims over behavior reads",
+    "Vote decisively to prevent no-lynch outcomes",
+    "Analyze who defends whom in discussion threads",
+    "Never self-vote as it helps the wolves",
+    "Question players avoiding clear stances early",
+    "Build trust with confirmed good roles immediately",
+    "Scrutinize late vote changes for wolf motives"
+  ],
+  "Werewolf": [
+    "Coordinate night kills on information roles first",
+    "Avoid over-defending packmates under town suspicion",
+    "Blend voting patterns with town consensus votes",
+    "Create misdirection by framing active villagers",
+    "Use tie votes strategically to protect pack",
+    "Kill confirmed good roles immediately when exposed",
+    "Spread suspicion evenly to avoid coordinated focus"
+  ],
+  "Seer": [
+    "Share verified wolf findings before you die",
+    "Check quiet players avoiding town attention",
+    "Do not reveal your role too early game",
+    "Corroborate your checks with other information",
+    "Trust your results over player persuasion",
+    "Coordinate protection with Guardian when known",
+    "Verify players making strong accusations carefully"
+  ],
+  "Guardian": [
+    "Protect the Seer consistently once revealed",
+    "Do not protect yourself on the first night",
+    "Predict wolf targets from discussion patterns",
+    "Rotate protection to avoid predictable sequences",
+    "Coordinate with Witch for double safety layers",
+    "Protect players making strong wolf accusations",
+    "Prioritize information roles over random villagers"
+  ],
+  "Hunter": [
+    "Announce role late-game to deter night kills",
+    "Vote carefully as your death decides lynch",
+    "Threaten retaliation against prime wolf suspects",
+    "Do not reveal your role during early game",
+    "Use final shot to eliminate confirmed wolves",
+    "Coordinate final shot with village consensus",
+    "Maintain voting consistency to avoid suspicion"
+  ]
+}

@@ -1,0 +1,60 @@
+{
+  "per_player": {
+    "Alice": "Died night 1. No major mistakes. Tip: As first victim, leave clearer suspicion in last words to guide village.",
+    "Bob": "Aggressive day 1 push on quiet players drew suspicion. Survived by blending in later. Tip: Less aggressive early game framing.",
+    "Charlie": "Survived witch save. Reasonable arguments but couldn't identify wolves. Tip: Analyze voting blocs more carefully.",
+    "David": "Protected Charlie successfully but misread Grace as good. Tip: Guardian should protect suspected power roles, not quiet players.",
+    "Eve": "Revealed hunter role after elimination, shot wrong target (Leo). Tip: Hunter should only reveal if certain of wolf target.",
+    "Frank": "Played subtly, avoided early suspicion, voted with pack. Solid wolf performance. Tip: Maintain this balanced deception.",
+    "Grace": "Protected night 2, successfully framed others. Good wolf teamwork. Tip: Continue deflecting suspicion onto villagers.",
+    "Henry": "Followed consensus, lacked independent analysis. Tip: Question bandwagon votes more aggressively.",
+    "Ivy": "Checked Alice & Charlie (both good), but didn't share info effectively. Tip: Seer must reveal strategically before dying.",
+    "Jack": "Saved Charlie correctly but wasted poison. Poor information use. Tip: Witch must use poison on strong wolf suspects.",
+    "Kate": "Solid wolf play, voted with pack, avoided suspicion. Good pack coordination. Tip: Maintain low-profile deception.",
+    "Leo": "Died to hunter shot. Quiet villager, minimal impact. Tip: Villagers must contribute more to discussion."
+  },
+  "overall": "Werewolves won due to superior coordination and village errors. Wolves framed villagers effectively while village mislynched hunter day 1. Poor information management by seer/witch and chaotic voting doomed village. Hunter's revenge kill on villager sealed defeat.",
+  "lessons": {
+    "Villager": [
+      "Question early vote pushes aggressively to expose wolves.",
+      "Analyze voting patterns for coordinated wolf blocs.",
+      "Contribute meaningful discussion, not just consensus.",
+      "Suspect players who avoid controversial stances.",
+      "Do not reveal special roles unnecessarily.",
+      "Pressure quiet players to force participation."
+    ],
+    "Werewolf": [
+      "Frame villagers using plausible, logical reasoning.",
+      "Coordinate votes subtly without appearing as a bloc.",
+      "Blend in by sometimes agreeing with village consensus.",
+      "Push mislynches on active village threats.",
+      "Avoid being the most aggressive voice early.",
+      "Deflect suspicion by questioning others' logic."
+    ],
+    "Seer": [
+      "Reveal checked wolves before you are likely to die.",
+      "Check quiet players who survive multiple nights.",
+      "Share information strategically, not too early.",
+      "Coordinate with witch and guardian if identities are known.",
+      "Suspect players who actively avoid seer checks.",
+      "Prioritize checking players with conflicting votes."
+    ],
+    "Guardian": [
+      "Protect suspected power roles first.",
+      "Never protect the same person two nights consecutively.",
+      "Coordinate protection with seer and witch if possible.",
+      "Consider protecting quiet survivors of multiple nights.",
+      "Balance protection between confirmed and suspected villagers.",
+      "Protect yourself if you are a confirmed target."
+    ],
+    "Hunter": [
+      "Only reveal your role if certain of a wolf.",
+      "Shoot suspected wolves based on solid evidence.",
+      "Consider holding your reveal until later critical rounds.",
+      "Analyze voting patterns thoroughly before shooting.",
+      "Do not let wolves bait your shot with false claims.",
+      "Announce your target to pressure wolves before shooting."
+    ]
+  },
+  "winner": "werewolves"
+}

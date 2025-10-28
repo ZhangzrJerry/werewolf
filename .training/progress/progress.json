@@ -1,0 +1,76 @@
+{
+  "total_games": 5,
+  "last_updated": "2025-10-28T16:53:33.638503",
+  "games_history": [
+    {
+      "game_num": 1,
+      "winner": "werewolves",
+      "rounds": 4,
+      "log_file": ".training\\game_logs\\werewolf_game_20251028_160800_cfb7553b.txt",
+      "timestamp": "2025-10-28T16:19:06.432983"
+    },
+    {
+      "game_num": 2,
+      "winner": "werewolves",
+      "rounds": 2,
+      "log_file": ".training\\game_logs\\werewolf_game_20251028_163454_918b878e.txt",
+      "timestamp": "2025-10-28T16:41:38.427391"
+    },
+    {
+      "game_num": 3,
+      "winner": "werewolves",
+      "rounds": 3,
+      "log_file": ".training\\game_logs\\werewolf_game_20251028_163454_ea09a59a.txt",
+      "timestamp": "2025-10-28T16:44:13.734000"
+    },
+    {
+      "game_num": 10,
+      "winner": "werewolves",
+      "rounds": 3,
+      "log_file": ".training\\game_logs\\werewolf_game_20251028_163454_953d64fd.txt",
+      "timestamp": "2025-10-28T16:45:12.690014"
+    },
+    {
+      "game_num": 7,
+      "winner": "werewolves",
+      "rounds": 3,
+      "log_file": ".training\\game_logs\\werewolf_game_20251028_163454_4d057309.txt",
+      "timestamp": "2025-10-28T16:45:36.025138"
+    },
+    {
+      "game_num": 6,
+      "winner": "werewolves",
+      "rounds": 3,
+      "log_file": ".training\\game_logs\\werewolf_game_20251028_163454_47d8aa64.txt",
+      "timestamp": "2025-10-28T16:47:00.144073"
+    },
+    {
+      "game_num": 4,
+      "winner": "werewolves",
+      "rounds": 4,
+      "log_file": ".training\\game_logs\\werewolf_game_20251028_163454_aee16d4f.txt",
+      "timestamp": "2025-10-28T16:49:25.630823"
+    },
+    {
+      "game_num": 9,
+      "winner": "werewolves",
+      "rounds": 4,
+      "log_file": ".training\\game_logs\\werewolf_game_20251028_163454_0b145ede.txt",
+      "timestamp": "2025-10-28T16:51:01.387384"
+    },
+    {
+      "game_num": 8,
+      "winner": "werewolves",
+      "rounds": 5,
+      "log_file": ".training\\game_logs\\werewolf_game_20251028_163454_a279a19a.txt",
+      "timestamp": "2025-10-28T16:53:03.481299"
+    },
+    {
+      "game_num": 5,
+      "winner": "werewolves",
+      "rounds": 7,
+      "log_file": ".training\\game_logs\\werewolf_game_20251028_163454_e305ceed.txt",
+      "timestamp": "2025-10-28T16:53:32.845733"
+    }
+  ]
+}

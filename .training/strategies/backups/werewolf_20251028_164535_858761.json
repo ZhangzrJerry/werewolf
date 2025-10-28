@@ -1,0 +1,21 @@
+{
+  "rules": [
+    "Coordinate votes subtly to avoid obvious pack behavior patterns",
+    "Defend packmates indirectly through logical argumentation",
+    "Push mislynches on powerful town roles during early game",
+    "Blend in by engaging in reasonable discussion and analysis",
+    "Use quiet players as misdirection targets for town suspicion",
+    "Shift suspicion onto active town players creating chaos",
+    "Avoid being the first or last vote in suspicious lynch trains",
+    "Create plausible alternative narratives to divide town attention",
+    "Coordinate votes with teammates but vary your individual reasoning",
+    "Kill confirmed special roles immediately to cripple village information",
+    "Blend in by agreeing with legitimate village concerns and suspicions",
+    "Create misdirection by pushing easy targets and framing villagers",
+    "Avoid mirroring teammates' exact phrases or arguments during discussions",
+    "Use early discussions to establish village credibility and frame others",
+    "Defend suspected teammates subtly by questioning accusers' motives"
+  ],
+  "updated_at": "2025-10-28T16:45:12.512477",
+  "total_updates": 15
+}

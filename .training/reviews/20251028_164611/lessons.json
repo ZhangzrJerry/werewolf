@@ -1,0 +1,50 @@
+{
+  "Villager": [
+    "Question early aggressive callouts from multiple players",
+    "Track voting patterns for coordinated wolf voting blocs",
+    "Push Seer to reveal findings immediately when safe",
+    "Avoid bandwagoning without solid reasoning or evidence",
+    "Build trust with confirmed good players early",
+    "Watch for identical phrasing in multiple player defenses"
+  ],
+  "Werewolf": [
+    "Coordinate narrative timing and targets with pack members",
+    "Use misdirection to create multiple false town targets",
+    "Let packmates defend you subtly when under suspicion",
+    "Blend voting patterns with town consensus to appear innocent",
+    "Create chaos by questioning early bandwagons and votes",
+    "Protect identified wolves through coordinated narrative defense"
+  ],
+  "Seer": [
+    "Reveal wolf findings immediately to guide town votes",
+    "Check quiet players avoiding attention early in game",
+    "Share information before major voting decisions occur",
+    "Build trust circle with confirmed good players quickly",
+    "Avoid revealing your role until necessary for town",
+    "Coordinate with Witch for protection if you are revealed"
+  ],
+  "Witch": [
+    "Use poison on confirmed wolves immediately when found",
+    "Save antidote for key power roles when possible",
+    "Coordinate poison use with Seer findings for maximum impact",
+    "Reveal role strategically only to confirm critical information",
+    "Watch night survival patterns to identify wolf targets",
+    "Never waste poison on unconfirmed suspicions or guesses"
+  ],
+  "Guardian": [
+    "Protect power roles immediately after they reveal information",
+    "Avoid protecting the same player two nights consecutively",
+    "Coordinate protection targets with confirmed good players",
+    "Watch voting patterns to identify likely wolf targets",
+    "Balance self-protection with team protection needs carefully",
+    "Consider protecting suspected wolves to confuse the pack"
+  ],
+  "Hunter": [
+    "Reveal role strategically only when under suspicion",
+    "Take out confirmed wolves with your dying shot always",
+    "Build credibility early to avoid being mislynched by town",
+    "Coordinate information sharing with Seer and Witch roles",
+    "Use threat of your shot to deter wolf attacks on you",
+    "Never reveal your role unnecessarily early in the game"
+  ]
+}

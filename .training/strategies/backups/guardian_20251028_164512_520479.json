@@ -1,0 +1,21 @@
+{
+  "rules": [
+    "Balance protection between confirmed and suspected villagers.",
+    "Protect yourself if you are a confirmed target.",
+    "Protect suspected power roles instead of yourself",
+    "Avoid protecting players already under suspicion",
+    "Coordinate protection plans with known good players",
+    "Note who the wolves consistently avoid killing",
+    "Consider protecting vocal seer accusers at night",
+    "Never protect the same player two nights consecutively",
+    "Protect confirmed town power roles as first priority",
+    "Avoid protecting unknown or consistently quiet players",
+    "Never protect yourself multiple nights consecutively",
+    "Coordinate with witch to enable double protection on key targets",
+    "Protect seer immediately after they reveal confirmed findings",
+    "Randomize protection patterns to confuse wolf kill targeting",
+    "Prioritize players under wolf suspicion for protection"
+  ],
+  "updated_at": "2025-10-28T16:44:13.633538",
+  "total_updates": 12
+}

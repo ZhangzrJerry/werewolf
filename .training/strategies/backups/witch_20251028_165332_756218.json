@@ -1,0 +1,21 @@
+{
+  "rules": [
+    "Reveal role strategically only to confirm critical information",
+    "Watch night survival patterns to identify wolf targets",
+    "Never waste poison on unconfirmed suspicions or guesses",
+    "Use poison aggressively when wolves are identified with high confidence",
+    "Do not save players who are obvious repeated wolf elimination targets",
+    "Coordinate save and poison actions with Seer information when possible",
+    "Keep your actions and identity hidden until absolutely necessary",
+    "Use poison to break voting deadlocks and eliminate suspicious players",
+    "Consider poisoning players with consistently suspicious voting patterns",
+    "Save confirmed good players immediately with healing potion",
+    "Use poison on strong wolf suspects early in game",
+    "Coordinate potion usage with seer findings when possible",
+    "Don't hold potions too long as value decreases",
+    "Claim saved players to confirm their alignment publicly",
+    "Watch for wolves avoiding night targets to identify pack"
+  ],
+  "updated_at": "2025-10-28T16:51:01.300653",
+  "total_updates": 15
+}

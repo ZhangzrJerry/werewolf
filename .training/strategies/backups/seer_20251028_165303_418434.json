@@ -1,0 +1,21 @@
+{
+  "rules": [
+    "Build trust circle with confirmed good players quickly",
+    "Avoid revealing your role until necessary for town",
+    "Coordinate with Witch for protection if you are revealed",
+    "Share your findings strategically before you might be eliminated",
+    "Check players involved in suspicious coordination or voting patterns",
+    "Prioritize checking suspicious players over confirming obvious villagers",
+    "Coordinate secretly with the Guardian when your identity is known",
+    "Verify players leading suspicious counter-arguments against confirmed villagers",
+    "Reveal to confirm multiple players' alignments at once for maximum impact",
+    "Share wolf findings immediately after confirming their identity",
+    "Check quiet players avoiding discussion for wolf potential",
+    "Verify players pushing strong narratives without evidence",
+    "Coordinate findings with witch and guardian when confirmed",
+    "Don't reveal role until necessary for village benefit",
+    "Track voting patterns of checked players for consistency"
+  ],
+  "updated_at": "2025-10-28T16:51:01.296656",
+  "total_updates": 15
+}

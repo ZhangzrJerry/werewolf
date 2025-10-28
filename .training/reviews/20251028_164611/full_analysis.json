@@ -1,0 +1,68 @@
+{
+  "per_player": {
+    "Alice": "Good survival instincts but poor voting. Voted for Eve instead of confirmed wolf Kate. Tip: Trust Seer info and vote with confirmed allies.",
+    "Bob": "Aggressive early callouts drew suspicion but created chaos. Wolf pack coordination was effective. Tip: Be less obvious in pushing misdirection.",
+    "Charlie": "Good potion use saved Alice but wasted poison. Failed to eliminate confirmed wolf. Tip: Use poison on confirmed threats immediately.",
+    "David": "Identified Kate as wolf but didn't push hard enough. Shared info too late. Tip: Reveal wolf findings immediately to guide votes.",
+    "Eve": "Reasonable analysis but voted poorly. Failed to recognize wolf patterns. Tip: Track voting blocs to identify wolf teams.",
+    "Frank": "Unfortunate early elimination. Correctly suspected Alice/Bob but couldn't convince others. Tip: Build alliances before being targeted.",
+    "Grace": "Average villager play. Followed consensus without critical analysis. Tip: Question bandwagons instead of joining them.",
+    "Henry": "Effective wolf play pushing Kate narrative. Created town division. Tip: Coordinate with pack on narrative timing.",
+    "Ivy": "Good protection choices but poor voting. Protected Alice but voted against her. Tip: Align protection with voting strategy.",
+    "Jack": "Solid wolf performance blending with town. Supported pack narratives subtly. Tip: Maintain consistent town persona throughout.",
+    "Kate": "Survived as confirmed wolf due to town chaos. Wolf pack defense was coordinated. Tip: Let packmates defend you subtly.",
+    "Leo": "Good analysis but ineffective execution. Spotted wolf patterns but couldn't rally votes. Tip: Build credibility early to lead votes."
+  },
+  "overall": "Werewolves won through coordinated misdirection and exploiting town indecision. They created multiple false narratives early, divided the village on irrelevant targets, and protected Kate despite Seer identification. Town failed to act on confirmed information and wasted votes on villagers instead of known wolves.",
+  "lessons": {
+    "Villager": [
+      "Question early aggressive callouts from multiple players",
+      "Track voting patterns for coordinated wolf voting blocs",
+      "Push Seer to reveal findings immediately when safe",
+      "Avoid bandwagoning without solid reasoning or evidence",
+      "Build trust with confirmed good players early",
+      "Watch for identical phrasing in multiple player defenses"
+    ],
+    "Werewolf": [
+      "Coordinate narrative timing and targets with pack members",
+      "Use misdirection to create multiple false town targets",
+      "Let packmates defend you subtly when under suspicion",
+      "Blend voting patterns with town consensus to appear innocent",
+      "Create chaos by questioning early bandwagons and votes",
+      "Protect identified wolves through coordinated narrative defense"
+    ],
+    "Seer": [
+      "Reveal wolf findings immediately to guide town votes",
+      "Check quiet players avoiding attention early in game",
+      "Share information before major voting decisions occur",
+      "Build trust circle with confirmed good players quickly",
+      "Avoid revealing your role until necessary for town",
+      "Coordinate with Witch for protection if you are revealed"
+    ],
+    "Witch": [
+      "Use poison on confirmed wolves immediately when found",
+      "Save antidote for key power roles when possible",
+      "Coordinate poison use with Seer findings for maximum impact",
+      "Reveal role strategically only to confirm critical information",
+      "Watch night survival patterns to identify wolf targets",
+      "Never waste poison on unconfirmed suspicions or guesses"
+    ],
+    "Guardian": [
+      "Protect power roles immediately after they reveal information",
+      "Avoid protecting the same player two nights consecutively",
+      "Coordinate protection targets with confirmed good players",
+      "Watch voting patterns to identify likely wolf targets",
+      "Balance self-protection with team protection needs carefully",
+      "Consider protecting suspected wolves to confuse the pack"
+    ],
+    "Hunter": [
+      "Reveal role strategically only when under suspicion",
+      "Take out confirmed wolves with your dying shot always",
+      "Build credibility early to avoid being mislynched by town",
+      "Coordinate information sharing with Seer and Witch roles",
+      "Use threat of your shot to deter wolf attacks on you",
+      "Never reveal your role unnecessarily early in the game"
+    ]
+  },
+  "winner": "werewolves"
+}

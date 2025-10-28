@@ -1,0 +1,56 @@
+{
+  "Villager": [
+    "Pressure quiet players early for reactions and information",
+    "Build voting blocs with confirmed town players consistently",
+    "Watch for players defending each other without justification",
+    "Coordinate suspicions with special roles through private communication",
+    "Avoid revealing your role unless absolutely necessary for survival",
+    "Analyze voting patterns rather than blindly following consensus",
+    "Question players who avoid taking clear stances on key votes"
+  ],
+  "Werewolf": [
+    "Push mislynches on active town players during early game",
+    "Defend packmates subtly by questioning their accusers' motives",
+    "Balance participation level to avoid seer attention and suspicion",
+    "Coordinate night kills to eliminate confirmed special roles first",
+    "Create confusion by accusing logical town players with weak evidence",
+    "Vote with town majority while protecting wolf teammates",
+    "Mimic town behavior patterns to blend in naturally"
+  ],
+  "Seer": [
+    "Check quiet players first for potential wolf candidates",
+    "Share findings discreetly with trusted players before revealing publicly",
+    "Avoid revealing your role until you have verified information",
+    "Prioritize checking players who strategically avoid attention",
+    "Build trust network with confirmed town before claiming publicly",
+    "Verify conflicting players to resolve town disputes efficiently",
+    "Time your reveal to maximize impact on voting outcomes"
+  ],
+  "Witch": [
+    "Use save potion early on confirmed special roles or yourself",
+    "Poison strong wolf suspects before late game when threats remain",
+    "Never reveal how many potions you have remaining to wolves",
+    "Coordinate poison targets with seer findings for maximum efficiency",
+    "Save potion for self-protection if you become voting target",
+    "Use potions to counterbalance wolf kills and protect town momentum",
+    "Prioritize saving verified special roles over unconfirmed players"
+  ],
+  "Guardian": [
+    "Never reveal your protection targets publicly to wolves",
+    "Protect suspected seer or other key special roles consistently",
+    "Avoid protecting the same player consecutively to prevent predictability",
+    "Coordinate protections with witch saves through private communication",
+    "Protect yourself if no clear threats exist or you're suspected",
+    "Rotate protection between multiple valuable town players each night",
+    "Prioritize protection based on wolf kill patterns and threats"
+  ],
+  "Hunter": [
+    "Save death shot for confirmed wolf or critical game situation",
+    "Reveal role only when necessary to eliminate immediate threat",
+    "Coordinate final shot with town consensus when possible",
+    "Don't claim hunter early unless absolutely forced by voting",
+    "Use shot to break voting deadlocks or save confirmed town",
+    "Threaten retaliation against players pushing your mislynch attempt",
+    "Time your reveal to maximize psychological impact on wolves"
+  ]
+}

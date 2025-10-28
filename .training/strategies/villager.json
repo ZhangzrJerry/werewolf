@@ -1,0 +1,21 @@
+{
+  "rules": [
+    "Push for concrete claims over behavior reads",
+    "Vote decisively to prevent no-lynch outcomes",
+    "Analyze who defends whom in discussion threads",
+    "Never self-vote as it helps the wolves",
+    "Question players avoiding clear stances early",
+    "Build trust with confirmed good roles immediately",
+    "Scrutinize late vote changes for wolf motives",
+    "Question consistent voting blocs immediately to disrupt wolf plans",
+    "Pressure quiet players to contribute early and reveal stances",
+    "Analyze who benefits from each elimination for wolf motives",
+    "Consider dead players' final words as valuable information sources",
+    "Force players avoiding key topics to take definitive positions",
+    "Identify players who echo others without adding original value",
+    "Scrutinize late vote changes and sudden bandwagon formations",
+    "Compare stated suspicions with actual voting records for consistency"
+  ],
+  "updated_at": "2025-10-28T16:53:32.750218",
+  "total_updates": 15
+}

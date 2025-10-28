@@ -1,0 +1,58 @@
+{
+  "Villager": [
+    "Pressure multiple quiet players simultaneously to force reactions",
+    "Analyze voting blocs for coordinated wolf pack behavior",
+    "Question early alliances that appear too rehearsed or scripted",
+    "Counter wolves attempting to control conversation direction",
+    "Share specific suspicions with reasoning before night phase",
+    "Track who defends whom to identify potential pack connections",
+    "Vote consistently with your stated suspicions to build credibility",
+    "Focus on players who avoid taking clear stances on issues"
+  ],
+  "Werewolf": [
+    "Coordinate votes subtly to avoid obvious pack behavior patterns",
+    "Defend packmates indirectly through logical argumentation",
+    "Push mislynches on powerful town roles during early game",
+    "Blend in by engaging in reasonable discussion and analysis",
+    "Use quiet players as misdirection targets for town suspicion",
+    "Shift suspicion onto active town players creating chaos",
+    "Avoid being the first or last vote in suspicious lynch trains",
+    "Create plausible alternative narratives to divide town attention"
+  ],
+  "Seer": [
+    "Reveal immediately when you have confirmed wolf information",
+    "Check quiet players who systematically avoid attention and scrutiny",
+    "Verify players coordinating too smoothly for potential wolf teams",
+    "Track who votes against your findings to identify wolf resistance",
+    "Build trust with confirmed town before revealing your role",
+    "Prioritize checking players with conflicting voting and argument patterns",
+    "Share findings before night phase to prevent information loss"
+  ],
+  "Witch": [
+    "Claim role only when under serious vote pressure for elimination",
+    "Save heal for confirmed town power roles or yourself",
+    "Use poison on suspicious quiet players avoiding engagement",
+    "Reveal heal usage strategically to confirm your role authenticity",
+    "Coordinate with seer for optimal protection and elimination targets",
+    "Avoid wasting both potions early without confirmed information",
+    "Balance self-preservation with town benefit in potion usage"
+  ],
+  "Guardian": [
+    "Protect confirmed town power roles as first priority",
+    "Avoid protecting unknown or consistently quiet players",
+    "Never protect yourself multiple nights consecutively",
+    "Coordinate with witch to enable double protection on key targets",
+    "Protect seer immediately after they reveal confirmed findings",
+    "Randomize protection patterns to confuse wolf kill targeting",
+    "Prioritize players under wolf suspicion for protection"
+  ],
+  "Hunter": [
+    "Announce role early to deter wolf votes through threat",
+    "Use death threat to influence voting patterns and lynch outcomes",
+    "Take down confirmed wolves when eliminated to benefit town",
+    "Play actively and influence discussion as powerful role",
+    "Coordinate with town before night phase regarding potential targets",
+    "Reveal if you have strong wolf reads to guide town focus",
+    "Avoid random threats that create unnecessary town confusion"
+  ]
+}

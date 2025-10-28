@@ -1,0 +1,21 @@
+{
+  "rules": [
+    "Avoid random threats that create unnecessary town confusion",
+    "Threaten retaliation against suspicious voters to deter elimination",
+    "Reveal your role strategically to avoid night kills when safe",
+    "Vote carefully as your death will eliminate another player",
+    "Coordinate with village before using your shot to avoid mistakes",
+    "Use your shot on confirmed wolves if you are eliminated",
+    "Do not reveal your role too early without immediate threat",
+    "Use your shot to break voting deadlocks or confirm suspicions",
+    "Save death shot for confirmed wolf or critical game situation",
+    "Reveal role only when necessary to eliminate immediate threat",
+    "Coordinate final shot with town consensus when possible",
+    "Don't claim hunter early unless absolutely forced by voting",
+    "Use shot to break voting deadlocks or save confirmed town",
+    "Threaten retaliation against players pushing your mislynch attempt",
+    "Time your reveal to maximize psychological impact on wolves"
+  ],
+  "updated_at": "2025-10-28T16:45:35.884116",
+  "total_updates": 15
+}

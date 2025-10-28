@@ -1,0 +1,68 @@
+{
+  "per_player": {
+    "Alice": "Played too passively. Failed to capitalize on being saved by witch. Improvement: Claim your saved status earlier to gain credibility.",
+    "Bob": "Good wolf play. Created early misdirection and blended well. Improvement: Avoid being first to name specific players.",
+    "Charlie": "Reasonable villager logic but lacked impact. Improvement: Build stronger voting alliances with confirmed goods.",
+    "David": "Hunter was too quiet. Never used threat effectively. Improvement: Announce your role to deter wolves from targeting you.",
+    "Eve": "Guardian protected wolves twice. Poor protection choices. Improvement: Protect suspected power roles, not quiet players.",
+    "Frank": "Villager eliminated D1. Wrongly suspected Alice. Improvement: Don't make strong accusations without evidence.",
+    "Grace": "Good witch play saving Alice. Held poison too long. Improvement: Use poison earlier on strong wolf suspects.",
+    "Henry": "Solid wolf teamwork. Supported pack without drawing attention. Improvement: Coordinate voting patterns more naturally.",
+    "Ivy": "Seer found wolf Kate but revealed too late. Improvement: Share findings immediately after confirming wolf.",
+    "Jack": "Villager with good meta-analysis but seen as suspicious. Improvement: Frame consensus arguments more carefully.",
+    "Kate": "Wolf survived seer check by staying quiet. Good deception. Improvement: Be more active in discussions to blend.",
+    "Leo": "Excellent wolf play creating division. Mastered framing arguments. Improvement: Maintain consistent voting patterns."
+  },
+  "overall": "Werewolves won through coordinated voting and creating villager infighting. They manipulated day 1 vote onto Frank, then maintained control by dividing villagers with meta-arguments about consensus. The seer discovered a wolf but revealed too late, and guardian protected wolves twice.",
+  "lessons": {
+    "Villager": [
+      "Question early pushes against specific players without evidence",
+      "Coordinate voting with confirmed good players when possible",
+      "Watch for wolves framing village consensus as suspicious",
+      "Pressure quiet players who avoid engagement and discussion",
+      "Build alliances with power roles early to establish trust",
+      "Analyze voting patterns rather than blindly following consensus"
+    ],
+    "Werewolf": [
+      "Create early misdirection on day one to sow confusion",
+      "Blend voting patterns with village majority when safe",
+      "Frame villager coordination as evidence of wolfpack behavior",
+      "Support pack members subtly through strategic voting patterns",
+      "Target power roles consistently during night kill phases",
+      "Use meta-arguments about gameplay to create division"
+    ],
+    "Seer": [
+      "Share wolf findings immediately after confirming their identity",
+      "Check quiet players avoiding discussion for wolf potential",
+      "Verify players pushing strong narratives without evidence",
+      "Coordinate findings with witch and guardian when confirmed",
+      "Don't reveal role until necessary for village benefit",
+      "Track voting patterns of checked players for consistency"
+    ],
+    "Witch": [
+      "Save confirmed good players immediately with healing potion",
+      "Use poison on strong wolf suspects early in game",
+      "Coordinate potion usage with seer findings when possible",
+      "Don't hold potions too long as value decreases",
+      "Claim saved players to confirm their alignment publicly",
+      "Watch for wolves avoiding night targets to identify pack"
+    ],
+    "Guardian": [
+      "Protect suspected power roles first before others",
+      "Avoid protecting quiet or inactive players as targets",
+      "Coordinate protection timing with witch save availability",
+      "Never protect same player consecutively to avoid patterns",
+      "Watch for wolves suggesting protection targets carefully",
+      "Protect yourself when no clear targets are available"
+    ],
+    "Hunter": [
+      "Announce role early to deter wolves from targeting",
+      "Vote carefully as death reveals your final vote",
+      "Coordinate with confirmed good players before major votes",
+      "Use death threat to control voting and wolf behavior",
+      "Avoid random accusations that could mislead village",
+      "Protect power roles through strategic vote influence"
+    ]
+  },
+  "winner": "werewolves"
+}

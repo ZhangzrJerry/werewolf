@@ -1,0 +1,42 @@
+{
+  "Villager": [
+    "Question early vote pushes aggressively to expose wolves.",
+    "Analyze voting patterns for coordinated wolf blocs.",
+    "Contribute meaningful discussion, not just consensus.",
+    "Suspect players who avoid controversial stances.",
+    "Do not reveal special roles unnecessarily.",
+    "Pressure quiet players to force participation."
+  ],
+  "Werewolf": [
+    "Frame villagers using plausible, logical reasoning.",
+    "Coordinate votes subtly without appearing as a bloc.",
+    "Blend in by sometimes agreeing with village consensus.",
+    "Push mislynches on active village threats.",
+    "Avoid being the most aggressive voice early.",
+    "Deflect suspicion by questioning others' logic."
+  ],
+  "Seer": [
+    "Reveal checked wolves before you are likely to die.",
+    "Check quiet players who survive multiple nights.",
+    "Share information strategically, not too early.",
+    "Coordinate with witch and guardian if identities are known.",
+    "Suspect players who actively avoid seer checks.",
+    "Prioritize checking players with conflicting votes."
+  ],
+  "Guardian": [
+    "Protect suspected power roles first.",
+    "Never protect the same person two nights consecutively.",
+    "Coordinate protection with seer and witch if possible.",
+    "Consider protecting quiet survivors of multiple nights.",
+    "Balance protection between confirmed and suspected villagers.",
+    "Protect yourself if you are a confirmed target."
+  ],
+  "Hunter": [
+    "Only reveal your role if certain of a wolf.",
+    "Shoot suspected wolves based on solid evidence.",
+    "Consider holding your reveal until later critical rounds.",
+    "Analyze voting patterns thoroughly before shooting.",
+    "Do not let wolves bait your shot with false claims.",
+    "Announce your target to pressure wolves before shooting."
+  ]
+}

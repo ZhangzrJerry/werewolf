@@ -1,0 +1,1 @@
+Villager eliminated D1. Wrongly suspected Alice. Improvement: Don't make strong accusations without evidence.

@@ -1,0 +1,21 @@
+{
+  "rules": [
+    "Watch voting patterns of players you have checked",
+    "Reveal immediately when you have confirmed wolf information",
+    "Check quiet players who systematically avoid attention and scrutiny",
+    "Verify players coordinating too smoothly for potential wolf teams",
+    "Track who votes against your findings to identify wolf resistance",
+    "Build trust with confirmed town before revealing your role",
+    "Prioritize checking players with conflicting voting and argument patterns",
+    "Share findings before night phase to prevent information loss",
+    "Share check results with trusted players before you die",
+    "Check players who push suspicious narratives or coordinate votes",
+    "Verify quiet players early to gain maximum information from results",
+    "Coordinate with Guardian to create a protection chain if possible",
+    "Do not reveal your role immediately without a verified wolf",
+    "Claim Seer immediately after verifying a wolf to enable voting",
+    "Prioritize checking players who are likely to be night targets"
+  ],
+  "updated_at": "2025-10-28T16:45:12.515476",
+  "total_updates": 15
+}

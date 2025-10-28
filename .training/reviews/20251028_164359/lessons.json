@@ -1,0 +1,56 @@
+{
+  "Villager": [
+    "Pressure quiet players during early discussions to gather information",
+    "Analyze Day 1 voting patterns for wolf coordination",
+    "Build voting blocs around confirmed information and trusted players",
+    "Watch for coordinated wording or mirrored arguments between players",
+    "Avoid eliminating proactive villagers early without strong evidence",
+    "Vote consistently with your stated suspicions to maintain credibility",
+    "Scrutinize players who push easy targets without solid reasoning"
+  ],
+  "Werewolf": [
+    "Coordinate votes with teammates but vary your individual reasoning",
+    "Kill confirmed special roles immediately to cripple village information",
+    "Blend in by agreeing with legitimate village concerns and suspicions",
+    "Create misdirection by pushing easy targets and framing villagers",
+    "Avoid mirroring teammates' exact phrases or arguments during discussions",
+    "Use early discussions to establish village credibility and frame others",
+    "Defend suspected teammates subtly by questioning accusers' motives"
+  ],
+  "Seer": [
+    "Share check results with trusted players before you die",
+    "Check players who push suspicious narratives or coordinate votes",
+    "Verify quiet players early to gain maximum information from results",
+    "Coordinate with Guardian to create a protection chain if possible",
+    "Do not reveal your role immediately without a verified wolf",
+    "Claim Seer immediately after verifying a wolf to enable voting",
+    "Prioritize checking players who are likely to be night targets"
+  ],
+  "Witch": [
+    "Use poison early on highly suspicious players to confirm alignments",
+    "Save heal for confirmed villagers or critical special roles",
+    "Coordinate with Seer for confirmed wolf targets when using poison",
+    "Do not waste both potions by being too passive or hesitant",
+    "Use potions strategically to swing game balance and voting power",
+    "Consider saving heal for yourself if you are being targeted",
+    "Reveal your role and actions only when it benefits the village"
+  ],
+  "Guardian": [
+    "Protect confirmed special roles first to preserve village power",
+    "Never protect the same player two nights in a row",
+    "Coordinate with Seer to create a protection chain if possible",
+    "Avoid protecting silent or suspicious players who might be wolves",
+    "Consider protecting yourself if you suspect you are being targeted",
+    "Protect players who are likely wolf targets based on discussions",
+    "Keep your protection targets secret to avoid wolf prediction"
+  ],
+  "Hunter": [
+    "Threaten retaliation against suspicious voters to deter elimination",
+    "Reveal your role strategically to avoid night kills when safe",
+    "Vote carefully as your death will eliminate another player",
+    "Coordinate with village before using your shot to avoid mistakes",
+    "Use your shot on confirmed wolves if you are eliminated",
+    "Do not reveal your role too early without immediate threat",
+    "Use your shot to break voting deadlocks or confirm suspicions"
+  ]
+}

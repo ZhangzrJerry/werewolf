@@ -1,0 +1,21 @@
+{
+  "rules": [
+    "Consider protecting quiet players who might be key information roles",
+    "Balance protection between the Seer and other potential information sources",
+    "Protect suspected power roles first before others",
+    "Avoid protecting quiet or inactive players as targets",
+    "Coordinate protection timing with witch save availability",
+    "Never protect same player consecutively to avoid patterns",
+    "Watch for wolves suggesting protection targets carefully",
+    "Protect yourself when no clear targets are available",
+    "Protect the Seer consistently once revealed",
+    "Do not protect yourself on the first night",
+    "Predict wolf targets from discussion patterns",
+    "Rotate protection to avoid predictable sequences",
+    "Coordinate with Witch for double safety layers",
+    "Protect players making strong wolf accusations",
+    "Prioritize information roles over random villagers"
+  ],
+  "updated_at": "2025-10-28T16:53:03.422434",
+  "total_updates": 15
+}

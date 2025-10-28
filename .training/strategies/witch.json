@@ -1,0 +1,21 @@
+{
+  "rules": [
+    "Consider poisoning players with consistently suspicious voting patterns",
+    "Save confirmed good players immediately with healing potion",
+    "Use poison on strong wolf suspects early in game",
+    "Coordinate potion usage with seer findings when possible",
+    "Don't hold potions too long as value decreases",
+    "Claim saved players to confirm their alignment publicly",
+    "Watch for wolves avoiding night targets to identify pack",
+    "Use save potion early on key roles claiming valuable information",
+    "Save poison for confirmed wolves or highly suspicious players",
+    "Never waste both potions in a single night unless absolutely certain",
+    "Coordinate potion usage with Seer's information and village consensus",
+    "Watch for players avoiding discussions about night kill motivations",
+    "Use poison when village has strong suspicions but lacks voting majority",
+    "Prioritize saving players who are likely wolf targets for information",
+    "Remain hidden until your potions can create maximum game impact"
+  ],
+  "updated_at": "2025-10-28T16:53:32.758218",
+  "total_updates": 15
+}

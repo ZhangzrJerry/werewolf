@@ -1,0 +1,18 @@
+{
+  "rules": [
+    "Only reveal your role if certain of a wolf.",
+    "Shoot suspected wolves based on solid evidence.",
+    "Consider holding your reveal until later critical rounds.",
+    "Analyze voting patterns thoroughly before shooting.",
+    "Do not let wolves bait your shot with false claims.",
+    "Announce your target to pressure wolves before shooting.",
+    "Verify your targets thoroughly before shooting",
+    "Avoid shooting based on early game behavior alone",
+    "Coordinate your shot with living confirmed villagers",
+    "Consider withholding your shot if you are uncertain",
+    "Analyze voting patterns of the accused players",
+    "Use your shot only to eliminate confirmed threats"
+  ],
+  "updated_at": "2025-10-28T16:41:38.301875",
+  "total_updates": 6
+}

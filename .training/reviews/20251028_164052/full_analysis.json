@@ -1,0 +1,68 @@
+{
+  "per_player": {
+    "Alice": "Good wolf play by advocating caution while avoiding suspicion. Successfully framed others. Tip: Coordinate voting more subtly to avoid detection.",
+    "Bob": "No mistakes as first night kill. Final words tried to help villagers. Tip: As villager, always leave helpful analysis in final words.",
+    "Charlie": "Effective wolf team coordination on kills. Stayed under radar while teammates took heat. Tip: Balance between contributing and staying hidden.",
+    "David": "Poor hunter shot killed witch instead of confirmed wolf. Cost villagers their power roles. Tip: Verify targets before shooting as hunter.",
+    "Eve": "Voted for herself which helped wolves eliminate villager. Failed to defend properly. Tip: Never self-vote; always present counter-arguments.",
+    "Frank": "Aggressive wolf play calling out quiet players. Drew some suspicion but survived. Tip: Tone down aggression to avoid being targeted.",
+    "Grace": "Protected Alice night 2, helping wolves. Voted correctly for Alice day 1. Tip: Be more careful with protection choices.",
+    "Henry": "Reasonable analysis but failed to influence votes. Survived but couldn't stop wolf victory. Tip: Build stronger voting coalitions.",
+    "Ivy": "Identified two wolves but couldn't share info effectively. Got killed by hunter. Tip: Share findings earlier with trusted players.",
+    "Jack": "Witch wasted both potions. Killed by hunter's mistake. Poor resource management. Tip: Use potions proactively, not reactively.",
+    "Kate": "Defended Alice incorrectly. Failed to see wolf patterns. Tip: Question defensive players more carefully.",
+    "Leo": "Good wolf play redirecting suspicion. Helped eliminate Eve. Tip: Continue creating distractions from wolf teammates."
+  },
+  "overall": "Werewolves won due to coordinated voting and effective misdirection. Villagers failed to organize despite seer finding wolves. Hunter's mistake killing witch sealed defeat. Wolves controlled narrative from day 1.",
+  "lessons": {
+    "Villager": [
+      "Question players advocating excessive caution early",
+      "Never self-vote under pressure from accusations",
+      "Build voting coalitions around concrete suspicions",
+      "Analyze who defends whom during discussions",
+      "Pressure quiet players to contribute meaningfully",
+      "Watch for patterns in coordinated voting behavior"
+    ],
+    "Werewolf": [
+      "Advocate caution while teammates push mislynches",
+      "Coordinate votes subtly on easy town targets",
+      "Create distractions from wolf teammates under suspicion",
+      "Balance contribution with staying under the radar",
+      "Frame cautious players as overly calculating wolves",
+      "Use meta-commentary to redirect suspicion away"
+    ],
+    "Seer": [
+      "Share findings before being eliminated by wolves",
+      "Verify players pushing strong early game narratives",
+      "Build trust with one confirmed player to share results",
+      "Check players who frequently defend suspected wolves",
+      "Only reveal your identity for a crucial vote swing",
+      "Watch voting patterns of players you have checked"
+    ],
+    "Witch": [
+      "Use potions proactively rather than reactively",
+      "Save confirmed power roles over uncertain villagers",
+      "Coordinate potion use with the Seer if known",
+      "Avoid wasting both potions in the early game",
+      "Consider saving suspicious players for information",
+      "Analyze night kill patterns for wolf team logic"
+    ],
+    "Guardian": [
+      "Protect suspected power roles instead of yourself",
+      "Avoid protecting players already under suspicion",
+      "Coordinate protection plans with known good players",
+      "Note who the wolves consistently avoid killing",
+      "Consider protecting vocal seer accusers at night",
+      "Never protect the same player two nights consecutively"
+    ],
+    "Hunter": [
+      "Verify your targets thoroughly before shooting",
+      "Avoid shooting based on early game behavior alone",
+      "Coordinate your shot with living confirmed villagers",
+      "Consider withholding your shot if you are uncertain",
+      "Analyze voting patterns of the accused players",
+      "Use your shot only to eliminate confirmed threats"
+    ]
+  },
+  "winner": "werewolves"
+}

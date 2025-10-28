@@ -1,0 +1,21 @@
+{
+  "rules": [
+    "Never protect the same player two nights consecutively",
+    "Protect confirmed town power roles as first priority",
+    "Avoid protecting unknown or consistently quiet players",
+    "Never protect yourself multiple nights consecutively",
+    "Coordinate with witch to enable double protection on key targets",
+    "Protect seer immediately after they reveal confirmed findings",
+    "Randomize protection patterns to confuse wolf kill targeting",
+    "Prioritize players under wolf suspicion for protection",
+    "Protect confirmed special roles first to preserve village power",
+    "Never protect the same player two nights in a row",
+    "Coordinate with Seer to create a protection chain if possible",
+    "Avoid protecting silent or suspicious players who might be wolves",
+    "Consider protecting yourself if you suspect you are being targeted",
+    "Protect players who are likely wolf targets based on discussions",
+    "Keep your protection targets secret to avoid wolf prediction"
+  ],
+  "updated_at": "2025-10-28T16:45:12.522477",
+  "total_updates": 15
+}
