@@ -15,10 +15,11 @@ from urllib.parse import urljoin
 
 
 class StaticSiteGenerator:
-    def __init__(self, output_dir="dist", base_url="/werewolf/"):
+    def __init__(self, output_dir="dist", base_url="/werewolf/", local_test=False):
         self.app = app
         self.output_dir = Path(output_dir)
-        self.base_url = base_url
+        self.base_url = base_url if not local_test else "/"
+        self.local_test = local_test
 
     def generate(self):
         """生成静态站点"""
@@ -127,6 +128,40 @@ class StaticSiteGenerator:
             content = re.sub(r"`/api/", f"`{self.base_url}api/", content)
 
             # 修复特定API调用以使用静态文件
+            # 修复 /api/logs -> /api/logs.json
+            content = re.sub(
+                r"fetch\('([^']*)/api/logs'\)",
+                r"fetch('\1/api/logs.json')",
+                content,
+            )
+            content = re.sub(
+                r'fetch\("([^"]*)/api/logs"\)',
+                r'fetch("\1/api/logs.json")',
+                content,
+            )
+            content = re.sub(
+                r"fetch\(`([^`]*)/api/logs`\)",
+                r"fetch(`\1/api/logs.json`)",
+                content,
+            )
+
+            # 修复 /api/games -> /api/games.json
+            content = re.sub(
+                r"fetch\('([^']*)/api/games'\)",
+                r"fetch('\1/api/games.json')",
+                content,
+            )
+            content = re.sub(
+                r'fetch\("([^"]*)/api/games"\)',
+                r'fetch("\1/api/games.json")',
+                content,
+            )
+            content = re.sub(
+                r"fetch\(`([^`]*)/api/games`\)",
+                r"fetch(`\1/api/games.json`)",
+                content,
+            )
+
             # 修复 /werewolf/api/load/${filename} 调用，添加 .json 后缀
             content = re.sub(
                 r"fetch\(`([^`]*)/api/load/\$\{([^}]+)\}`\)",
@@ -348,20 +383,34 @@ def create_spa_fallback():
 
 
 def main():
+    import sys
+
     # 检查是否在visualization目录中
     if not Path("app.py").exists():
         print("Error: Must run from visualization directory")
         return
 
-    generator = StaticSiteGenerator()
+    # 检查是否是本地测试模式
+    local_test = "--local" in sys.argv
+
+    if local_test:
+        print("Generating for local testing...")
+        generator = StaticSiteGenerator(local_test=True)
+    else:
+        print("Generating for GitHub Pages deployment...")
+        generator = StaticSiteGenerator()
+
     generator.generate()
 
-    # GitHub Pages特定配置
-    create_github_pages_config()
-    create_spa_fallback()
-
-    print("\n=== Static Site Generation Complete ===")
-    print("Ready for GitHub Pages deployment")
+    if not local_test:
+        # GitHub Pages特定配置
+        create_github_pages_config()
+        create_spa_fallback()
+        print("\n=== Static Site Generation Complete ===")
+        print("Ready for GitHub Pages deployment")
+    else:
+        print("\n=== Local Test Site Generation Complete ===")
+        print("Ready for local testing on localhost")
 
 
 if __name__ == "__main__":
