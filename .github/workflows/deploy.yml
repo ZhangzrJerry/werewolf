@@ -19,59 +19,6 @@ env:
   NODE_VERSION: '18'
 
 jobs:
-  # Job 1: 整理和处理游戏日志
-  prepare-logs:
-    runs-on: ubuntu-latest
-    outputs:
-      logs-available: ${{ steps.check-logs.outputs.has-logs }}
-      logs-count: ${{ steps.organize-logs.outputs.count }}
-    
-    steps:
-    - uses: actions/checkout@v4
-    
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: ${{ env.PYTHON_VERSION }}
-    
-    - name: Check for game logs and reviews
-      id: check-logs
-      run: |
-        HAS_LOGS=false
-        HAS_REVIEWS=false
-        
-        if [ -d ".training/game_logs" ] && [ "$(ls -A .training/game_logs)" ]; then
-          HAS_LOGS=true
-          echo "Found game logs directory with files"
-        fi
-        
-        if [ -d ".training/reviews" ] && [ "$(ls -A .training/reviews)" ]; then
-          HAS_REVIEWS=true
-          echo "Found reviews directory with files"
-        fi
-        
-        if [ "$HAS_LOGS" = true ] || [ "$HAS_REVIEWS" = true ]; then
-          echo "has-logs=true" >> $GITHUB_OUTPUT
-          echo "Processing logs and/or reviews"
-        else
-          echo "has-logs=false" >> $GITHUB_OUTPUT
-          echo "No game logs or reviews found"
-        fi
-    
-    - name: Install dependencies for log processing
-      if: steps.check-logs.outputs.has-logs == 'true'
-      run: |
-        python -m pip install --upgrade pip
-        pip install python-dateutil
-    
-    - name: Organize and filter game logs
-      if: steps.check-logs.outputs.has-logs == 'true'
-      id: organize-logs
-      run: |
-        python scripts/organize_logs.py
-        echo "count=$(ls visualization/static/game_logs/ | wc -l)" >> $GITHUB_OUTPUT
-
-  # Job 2: 构建和部署应用
   deploy:
     runs-on: ubuntu-latest
     environment: 
