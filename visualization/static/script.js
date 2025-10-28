@@ -3,119 +3,6 @@ let currentGameData = null;
 let isPlaying = false;
 let playInterval = null;
 let playSpeed = 1000;
-let gameStateManager = null; // Static game state manager
-
-// Static Game State Manager for client-side navigation
-class StaticGameStateManager {
-    constructor() {
-        this.gameId = null;
-        this.states = new Map(); // Cache for loaded states
-        this.metadata = null;
-        this.currentEventIndex = 0;
-        this.isStatic = false;
-    }
-
-    async loadGame(gameId) {
-        this.gameId = gameId;
-        this.currentEventIndex = 0;
-        this.states.clear();
-
-        try {
-            // Load metadata
-            const metadataResponse = await fetch(`/games/${gameId}_metadata.json`);
-            if (metadataResponse.ok) {
-                this.metadata = await metadataResponse.json();
-                this.isStatic = true;
-                console.log('Loaded static game metadata:', this.metadata);
-            } else {
-                // Fallback to dynamic mode
-                this.isStatic = false;
-                console.log('Static metadata not found, using dynamic mode');
-                return false;
-            }
-
-            // Preload initial state
-            await this.loadState(0);
-            return true;
-        } catch (error) {
-            console.error('Failed to load static game:', error);
-            this.isStatic = false;
-            return false;
-        }
-    }
-
-    async loadState(eventIndex) {
-        if (this.states.has(eventIndex)) {
-            return this.states.get(eventIndex);
-        }
-
-        try {
-            const response = await fetch(`/games/${this.gameId}_states/${eventIndex}.json`);
-            if (response.ok) {
-                const state = await response.json();
-                this.states.set(eventIndex, state);
-                return state;
-            }
-        } catch (error) {
-            console.error(`Failed to load state ${eventIndex}:`, error);
-        }
-        return null;
-    }
-
-    async getCurrentState() {
-        if (!this.isStatic) return null;
-        return await this.loadState(this.currentEventIndex);
-    }
-
-    async nextEvent() {
-        if (!this.isStatic || !this.metadata) return null;
-
-        if (this.currentEventIndex < this.metadata.total_events) {
-            this.currentEventIndex++;
-        }
-
-        return await this.getCurrentState();
-    }
-
-    async prevEvent() {
-        if (!this.isStatic) return null;
-
-        if (this.currentEventIndex > 0) {
-            this.currentEventIndex--;
-        }
-
-        return await this.getCurrentState();
-    }
-
-    async jumpToEvent(eventIndex) {
-        if (!this.isStatic || !this.metadata) return null;
-
-        if (eventIndex >= 0 && eventIndex <= this.metadata.total_events) {
-            this.currentEventIndex = eventIndex;
-        }
-
-        return await this.getCurrentState();
-    }
-
-    async reset() {
-        if (!this.isStatic) return null;
-
-        this.currentEventIndex = 0;
-        return await this.getCurrentState();
-    }
-
-    getTotalEvents() {
-        return this.metadata ? this.metadata.total_events : 0;
-    }
-
-    getCurrentEventIndex() {
-        return this.currentEventIndex;
-    }
-
-    isStaticMode() {
-        return this.isStatic;
-    }
-}
 
 // Phase translations
 const phaseTranslations = {
@@ -204,21 +91,12 @@ function highlightKeywords(text, keywords = []) {
 document.addEventListener('DOMContentLoaded', function () {
     loadAvailableLogs();
     setupEventListeners();
-    setupKeyboardControls();
 });
 
 // Load available log files
 async function loadAvailableLogs() {
     try {
         const response = await fetch('/api/logs');
-
-        if (!response.ok) {
-            // Try to detect static mode by checking for static files
-            console.log('API not available, checking for static files...');
-            await detectStaticMode();
-            return;
-        }
-
         const logs = await response.json();
 
         const logList = document.getElementById('log-list');
@@ -255,96 +133,11 @@ async function loadAvailableLogs() {
     }
 }
 
-// Detect static mode and load available games
-async function detectStaticMode() {
-    try {
-        console.log('Detecting static mode...');
-
-        // Try to load games list from static files
-        const gamesResponse = await fetch('/api/games.json');
-        if (!gamesResponse.ok) {
-            // No static games available
-            document.getElementById('log-list').innerHTML =
-                '<p class="loading">静态部署模式：游戏数据不可用</p>';
-            return;
-        }
-
-        const games = await gamesResponse.json();
-        const logList = document.getElementById('log-list');
-
-        if (!games || games.length === 0) {
-            logList.innerHTML = '<p class="loading">没有找到游戏数据</p>';
-            return;
-        }
-
-        logList.innerHTML = '';
-
-        // Create log items from games data
-        games.forEach(game => {
-            const logItem = document.createElement('div');
-            logItem.className = 'log-item';
-
-            // Format date if available
-            let dateStr = '未知';
-            if (game.created) {
-                const date = new Date(game.created * 1000);
-                dateStr = date.toLocaleString('zh-CN');
-            }
-
-            logItem.innerHTML = `
-                <h3>${game.id}.txt</h3>
-                <div class="log-meta">
-                    <div>日期: ${dateStr}</div>
-                    <div>模式: 静态</div>
-                </div>
-            `;
-
-            logItem.addEventListener('click', () => loadLog(`${game.id}.txt`));
-            logList.appendChild(logItem);
-        });
-
-        console.log(`Loaded ${games.length} games in static mode`);
-
-    } catch (error) {
-        console.error('Failed to detect static mode:', error);
-        document.getElementById('log-list').innerHTML =
-            '<p class="loading">静态模式检测失败</p>';
-    }
-}
-
 // Load a specific log file
 async function loadLog(filename) {
     try {
-        // Extract game ID from filename (remove .txt extension)
-        const gameId = filename.replace('.txt', '');
-
-        // Initialize static game state manager if not already done
-        if (!gameStateManager) {
-            gameStateManager = new StaticGameStateManager();
-        }
-
-        // Try to load in static mode first
-        const staticLoaded = await gameStateManager.loadGame(gameId);
-
-        let data;
-        if (staticLoaded) {
-            // Load game data from static JSON
-            const gameResponse = await fetch(`/games/${gameId}.json`);
-            if (gameResponse.ok) {
-                data = await gameResponse.json();
-                console.log('Loaded static game data');
-            } else {
-                throw new Error('Static game data not found');
-            }
-        } else {
-            // Fallback to dynamic mode
-            const response = await fetch(`/api/load/${filename}`);
-            if (!response.ok) {
-                throw new Error('Failed to load from API');
-            }
-            data = await response.json();
-            console.log('Loaded dynamic game data');
-        }
+        const response = await fetch(`/api/load/${filename}`);
+        const data = await response.json();
 
         if (data.error) {
             alert('加载失败: ' + data.error);
@@ -444,28 +237,12 @@ function updatePlayerCards(playerStates) {
 // Update game state
 async function updateState() {
     try {
-        let state;
+        const response = await fetch('/api/state');
+        const state = await response.json();
 
-        // Try static mode first
-        if (gameStateManager && gameStateManager.isStaticMode()) {
-            state = await gameStateManager.getCurrentState();
-            if (!state) {
-                console.error('State error: Failed to load static state');
-                return;
-            }
-        } else {
-            // Fallback to dynamic mode
-            const response = await fetch('/api/state');
-            if (!response.ok) {
-                console.error('State error: API not available in static deployment');
-                return;
-            }
-            state = await response.json();
-
-            if (state.error) {
-                console.error('State error:', state.error);
-                return;
-            }
+        if (state.error) {
+            console.error('State error:', state.error);
+            return;
         }
 
         // Update progress
@@ -679,23 +456,13 @@ function displayEvent(event) {
 function setupEventListeners() {
     document.getElementById('btn-reset').addEventListener('click', async () => {
         stopPlaying();
-
-        if (gameStateManager && gameStateManager.isStaticMode()) {
-            await gameStateManager.reset();
-        } else {
-            await fetch('/api/reset');
-        }
+        await fetch('/api/reset');
         await updateState();
     });
 
     document.getElementById('btn-prev').addEventListener('click', async () => {
         stopPlaying();
-
-        if (gameStateManager && gameStateManager.isStaticMode()) {
-            await gameStateManager.prevEvent();
-        } else {
-            await fetch('/api/prev');
-        }
+        await fetch('/api/prev');
         await updateState();
     });
 
@@ -709,12 +476,7 @@ function setupEventListeners() {
 
     document.getElementById('btn-next').addEventListener('click', async () => {
         stopPlaying();
-
-        if (gameStateManager && gameStateManager.isStaticMode()) {
-            await gameStateManager.nextEvent();
-        } else {
-            await fetch('/api/next');
-        }
+        await fetch('/api/next');
         await updateState();
     });
 
@@ -780,24 +542,13 @@ function setupProgressBarControls() {
         const percentage = clickX / rect.width;
 
         // Get current state to know total events
-        let totalEvents;
-        if (gameStateManager && gameStateManager.isStaticMode()) {
-            totalEvents = gameStateManager.getTotalEvents();
-        } else {
-            const stateResponse = await fetch('/api/state');
-            const state = await stateResponse.json();
-            totalEvents = state.total_events;
-        }
+        const stateResponse = await fetch('/api/state');
+        const state = await stateResponse.json();
 
-        if (totalEvents > 0) {
-            const targetIndex = Math.round(percentage * totalEvents);
+        if (state.total_events > 0) {
+            const targetIndex = Math.round(percentage * state.total_events);
             stopPlaying();
-
-            if (gameStateManager && gameStateManager.isStaticMode()) {
-                await gameStateManager.jumpToEvent(targetIndex);
-            } else {
-                await fetch(`/api/jump/${targetIndex}`);
-            }
+            await fetch(`/api/jump/${targetIndex}`);
             await updateState();
         }
     });
@@ -837,23 +588,12 @@ function setupProgressBarControls() {
         const percentage = clickX / rect.width;
 
         // Get current state to know total events
-        let totalEvents;
-        if (gameStateManager && gameStateManager.isStaticMode()) {
-            totalEvents = gameStateManager.getTotalEvents();
-        } else {
-            const stateResponse = await fetch('/api/state');
-            const state = await stateResponse.json();
-            totalEvents = state.total_events;
-        }
+        const stateResponse = await fetch('/api/state');
+        const state = await stateResponse.json();
 
-        if (totalEvents > 0) {
-            const targetIndex = Math.round(percentage * totalEvents);
-
-            if (gameStateManager && gameStateManager.isStaticMode()) {
-                await gameStateManager.jumpToEvent(targetIndex);
-            } else {
-                await fetch(`/api/jump/${targetIndex}`);
-            }
+        if (state.total_events > 0) {
+            const targetIndex = Math.round(percentage * state.total_events);
+            await fetch(`/api/jump/${targetIndex}`);
             await updateState();
         }
     });
@@ -873,24 +613,14 @@ function setupKeyboardControls() {
             case 'ArrowLeft':
                 e.preventDefault();
                 stopPlaying();
-
-                if (gameStateManager && gameStateManager.isStaticMode()) {
-                    await gameStateManager.prevEvent();
-                } else {
-                    await fetch('/api/prev');
-                }
+                await fetch('/api/prev');
                 await updateState();
                 break;
 
             case 'ArrowRight':
                 e.preventDefault();
                 stopPlaying();
-
-                if (gameStateManager && gameStateManager.isStaticMode()) {
-                    await gameStateManager.nextEvent();
-                } else {
-                    await fetch('/api/next');
-                }
+                await fetch('/api/next');
                 await updateState();
                 break;
 
@@ -912,18 +642,12 @@ function startPlaying() {
     document.getElementById('btn-play').textContent = '⏸ 暂停';
 
     playInterval = setInterval(async () => {
-        let state;
-
-        if (gameStateManager && gameStateManager.isStaticMode()) {
-            state = await gameStateManager.nextEvent();
-        } else {
-            const response = await fetch('/api/next');
-            state = await response.json();
-        }
+        const response = await fetch('/api/next');
+        const state = await response.json();
 
         await updateState();
 
-        if (state && state.is_finished) {
+        if (state.is_finished) {
             stopPlaying();
         }
     }, playSpeed);
@@ -943,28 +667,11 @@ function stopPlaying() {
 // Show game overview modal
 async function showGameOverview() {
     try {
-        let overview;
+        const response = await fetch('/api/overview');
+        const overview = await response.json();
 
-        if (gameStateManager && gameStateManager.isStaticMode() && gameStateManager.metadata) {
-            // Use static overview data
-            overview = gameStateManager.metadata.overview;
-        } else {
-            // Fallback to dynamic mode
-            const response = await fetch('/api/overview');
-            if (!response.ok) {
-                alert('概览功能在静态部署中暂不可用');
-                return;
-            }
-            overview = await response.json();
-        }
-
-        if (overview && overview.error) {
+        if (overview.error) {
             alert('获取游戏概览失败: ' + overview.error);
-            return;
-        }
-
-        if (!overview) {
-            alert('概览数据不可用');
             return;
         }
 
