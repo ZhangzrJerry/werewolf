@@ -128,7 +128,7 @@ class StaticSiteGenerator:
             content = re.sub(
                 r"fetch\(`([^`]*)/api/load/\$\{([^}]+)\}`\)",
                 r"fetch(`\1/api/load/${\2}.json`)",
-                content
+                content,
             )
 
             # 添加静态部署标识和错误处理
@@ -162,7 +162,7 @@ window.fetch = async function(...args) {
 };
 
 """
-            
+
             content = static_deployment_code + content
 
             js_file.write_text(content, encoding="utf-8")
