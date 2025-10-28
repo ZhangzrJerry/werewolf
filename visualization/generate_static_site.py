@@ -123,8 +123,50 @@ class StaticSiteGenerator:
             content = re.sub(r'"/api/', f'"{self.base_url}api/', content)
             content = re.sub(r"`/api/", f"`{self.base_url}api/", content)
 
+            # 修复特定API调用以使用静态文件
+            # 修复 /werewolf/api/load/${filename} 调用，添加 .json 后缀
+            content = re.sub(
+                r"fetch\(`([^`]*)/api/load/\$\{([^}]+)\}`\)",
+                r"fetch(`\1/api/load/${\2}.json`)",
+                content
+            )
+
+            # 添加静态部署标识和错误处理
+            static_deployment_code = """
+// Static deployment configuration
+window.STATIC_DEPLOYMENT = true;
+
+// Override fetch for static deployment error handling
+const originalFetch = window.fetch;
+window.fetch = async function(...args) {
+    try {
+        const response = await originalFetch(...args);
+        if (!response.ok && window.STATIC_DEPLOYMENT) {
+            // For static deployment, some APIs are not available
+            const url = args[0];
+            if (url.includes('/api/state') || url.includes('/api/reset') || 
+                url.includes('/api/prev') || url.includes('/api/next') || 
+                url.includes('/api/jump') || url.includes('/api/overview')) {
+                console.warn('API not available in static deployment:', url);
+                return new Response(JSON.stringify({error: 'API not available in static deployment'}), {
+                    status: 200,
+                    headers: {'Content-Type': 'application/json'}
+                });
+            }
+        }
+        return response;
+    } catch (error) {
+        console.error('Fetch error:', error);
+        throw error;
+    }
+};
+
+"""
+            
+            content = static_deployment_code + content
+
             js_file.write_text(content, encoding="utf-8")
-            print("Fixed JavaScript URLs")
+            print("Fixed JavaScript URLs and added static deployment support")
 
     def _fix_static_html_files(self):
         """修复静态HTML文件中的URL路径"""
@@ -158,6 +200,29 @@ class StaticSiteGenerator:
             games_file = api_dir / "games.json"
             games_file.write_text(response.get_data(as_text=True), encoding="utf-8")
             print("Generated: api/games.json")
+
+        # 生成日志列表API
+        logs_response = client.get("/api/logs")
+        if logs_response.status_code == 200:
+            logs_file = api_dir / "logs.json"
+            logs_file.write_text(logs_response.get_data(as_text=True), encoding="utf-8")
+            print("Generated: api/logs.json")
+
+        # 为每个日志文件生成加载API
+        if logs_response.status_code == 200:
+            logs_data = logs_response.get_json()
+            load_dir = api_dir / "load"
+            load_dir.mkdir(exist_ok=True)
+
+            for log in logs_data:
+                filename = log["filename"]
+                load_response = client.get(f"/api/load/{filename}")
+                if load_response.status_code == 200:
+                    load_file = load_dir / f"{filename}.json"
+                    load_file.write_text(
+                        load_response.get_data(as_text=True), encoding="utf-8"
+                    )
+                    print(f"Generated: api/load/{filename}.json")
 
     def _generate_learning_chain_pages(self, client):
         """生成学习链页面"""
