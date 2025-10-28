@@ -28,6 +28,79 @@ header h1 {
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
 }
 
+/* Learning Navigation */
+.learning-nav {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 15px;
+    padding: 20px;
+    margin-top: 20px;
+    backdrop-filter: blur(10px);
+}
+
+.learning-nav h3 {
+    color: white;
+    text-align: center;
+    margin-bottom: 15px;
+    font-size: 1.3em;
+}
+
+.role-links {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 10px;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.role-link {
+    display: block;
+    padding: 12px 16px;
+    border-radius: 10px;
+    text-decoration: none;
+    color: white;
+    font-weight: bold;
+    text-align: center;
+    transition: all 0.3s ease;
+    background: rgba(255, 255, 255, 0.2);
+    border: 2px solid transparent;
+}
+
+.role-link:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.role-link.seer {
+    border-color: #74b9ff;
+}
+
+.role-link.werewolf {
+    border-color: #fd79a8;
+}
+
+.role-link.witch {
+    border-color: #a29bfe;
+}
+
+.role-link.villager {
+    border-color: #55a3ff;
+}
+
+.role-link.guardian {
+    border-color: #fdcb6e;
+}
+
+.role-link.hunter {
+    border-color: #fd79a8;
+}
+
+@media (max-width: 768px) {
+    .role-links {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
 /* Section Styles */
 .section {
     background: white;

@@ -156,10 +156,169 @@ def read_reviews_from_folder(folder: Path):
         return None
 
 
+def get_role_learning_data(role):
+    """获取指定角色的学习数据"""
+    base_dir = Path(__file__).parent.parent
+    reviews_dir = base_dir / ".training" / "reviews"
+    strategies_dir = base_dir / ".training" / "strategies"
+
+    learning_sessions = []
+    total_reviews = 0
+    total_strategies = 0
+
+    # 获取策略文件中的所有策略
+    strategy_file = strategies_dir / f"{role}.json"
+    current_strategies = []
+    if strategy_file.exists():
+        try:
+            with open(strategy_file, "r", encoding="utf-8") as f:
+                strategy_data = json.load(f)
+                current_strategies = strategy_data.get("rules", [])
+                total_strategies = len(current_strategies)
+        except Exception as e:
+            print(f"Error reading strategy file for {role}: {e}")
+
+    # 遍历所有复盘会话
+    if reviews_dir.exists():
+        session_dirs = sorted(
+            [d for d in reviews_dir.iterdir() if d.is_dir()],
+            key=lambda x: x.name,
+            reverse=True,
+        )
+
+        for session_dir in session_dirs:
+            try:
+                # 解析时间戳
+                timestamp = session_dir.name
+                date_part = timestamp[:8]  # YYYYMMDD
+                time_part = timestamp[9:]  # HHMMSS
+
+                formatted_date = f"{date_part[:4]}-{date_part[4:6]}-{date_part[6:8]}"
+                formatted_time = f"{time_part[:2]}:{time_part[2:4]}:{time_part[4:6]}"
+
+                # 收集该会话的复盘记录
+                session_reviews = []
+                session_strategies = []
+
+                # 首先尝试从full_analysis.json获取结构化数据
+                full_analysis_file = session_dir / "full_analysis.json"
+                if full_analysis_file.exists():
+                    try:
+                        with open(full_analysis_file, "r", encoding="utf-8") as f:
+                            analysis_data = json.load(f)
+
+                        # 获取角色相关的复盘记录
+                        per_player = analysis_data.get("per_player", {})
+                        for player, review in per_player.items():
+                            if is_role_relevant_review(review, role):
+                                session_reviews.append(
+                                    {"player": player, "content": review}
+                                )
+
+                        # 获取角色相关的lessons作为策略
+                        lessons = analysis_data.get("lessons", {})
+                        role_key = role.capitalize()  # 首字母大写匹配JSON中的格式
+                        if role_key in lessons:
+                            session_strategies = lessons[role_key][:5]  # 取前5条
+
+                    except Exception as e:
+                        print(
+                            f"Error reading full_analysis.json in {session_dir.name}: {e}"
+                        )
+
+                # 如果没有从full_analysis获取到数据，则从单独的review文件获取
+                if not session_reviews:
+                    for review_file in session_dir.glob("*_review.txt"):
+                        player_name = review_file.name.replace("_review.txt", "")
+                        try:
+                            with open(review_file, "r", encoding="utf-8") as f:
+                                content = f.read().strip()
+                                if content and is_role_relevant_review(content, role):
+                                    session_reviews.append(
+                                        {"player": player_name, "content": content}
+                                    )
+                        except Exception as e:
+                            print(f"Error reading review file {review_file}: {e}")
+
+                # 如果没有会话特定的策略，使用当前策略的一部分
+                if not session_strategies and current_strategies:
+                    session_strategies = current_strategies[:3]
+
+                total_reviews += len(session_reviews)
+
+                # 只有有数据时才添加会话
+                if session_reviews or session_strategies:
+                    learning_sessions.append(
+                        {
+                            "date": formatted_date,
+                            "time": formatted_time,
+                            "reviews": session_reviews,
+                            "strategies": session_strategies,
+                            "timestamp": timestamp,
+                        }
+                    )
+
+            except Exception as e:
+                print(f"Error processing session {session_dir.name}: {e}")
+
+    return {
+        "sessions": learning_sessions,
+        "total_sessions": len(learning_sessions),
+        "total_reviews": total_reviews,
+        "total_strategies": total_strategies,
+    }
+
+
+def is_role_relevant_review(content, role):
+    """判断复盘内容是否与指定角色相关"""
+    role_keywords = {
+        "seer": ["预言家", "seer", "查验", "验人", "警徽"],
+        "werewolf": ["狼人", "werewolf", "刀人", "狼队"],
+        "witch": ["女巫", "witch", "毒药", "解药"],
+        "villager": ["村民", "villager", "票型", "发言"],
+        "guardian": ["守卫", "guardian", "守护", "撞刀"],
+        "hunter": ["猎人", "hunter", "开枪", "带走"],
+    }
+
+    keywords = role_keywords.get(role, [])
+    content_lower = content.lower()
+
+    return any(keyword.lower() in content_lower for keyword in keywords)
+
+
 @app.route("/")
 def index():
     """Main page - show log file selector"""
     return render_template("index.html")
+
+
+@app.route("/learning-chain/<role>")
+def learning_chain(role):
+    """学习链页面 - 显示指定角色的学习历程"""
+    role_config = {
+        "seer": {"name": "预言家", "icon": "🔮"},
+        "werewolf": {"name": "狼人", "icon": "🐺"},
+        "witch": {"name": "女巫", "icon": "🧙‍♀️"},
+        "villager": {"name": "村民", "icon": "👨‍🌾"},
+        "guardian": {"name": "守卫", "icon": "🛡️"},
+        "hunter": {"name": "猎人", "icon": "🏹"},
+    }
+
+    if role not in role_config:
+        return "角色不存在", 404
+
+    learning_data = get_role_learning_data(role)
+
+    return render_template(
+        "learning_chain.html",
+        role=role,
+        role_name=role_config[role]["name"],
+        role_icon=role_config[role]["icon"],
+        learning_data=learning_data["sessions"],
+        total_sessions=learning_data["total_sessions"],
+        total_reviews=learning_data["total_reviews"],
+        total_strategies=learning_data["total_strategies"],
+    )
 
 
 @app.route("/api/logs")

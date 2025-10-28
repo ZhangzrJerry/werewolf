@@ -31,6 +31,6 @@ htmlcov/
 .env.local
 
 # Training data directory (generated content)
-.training/
+# .training/
 .training_bak/
 

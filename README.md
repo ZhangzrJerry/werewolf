@@ -1,5 +1,8 @@
 <div align="center">
-<img src="visualization/static/teaser-modified.png" alt="teaser" width="90" style="border-radius:100%; margin-right:12px;" /><img src="visualization/static/public/logo.svg" alt="teaser" width="90" style="border-radius:100%;" />
+<p align="center">
+    <img src="visualization/static/teaser-modified.png" alt="teaser" width="90" />
+    <img src="visualization/static/public/logo.svg" alt="logo" width="90" />
+</p>
 
 # Werewolf Game · 会学习的狼人杀智能体
 
@@ -14,7 +17,7 @@
 - 自我对弈：批量开局、可中断恢复、策略与复盘自动持久化
 - 易于扩展：清晰的编排器与 Agent 接口，便于添加新角色/策略
 
-> 详情请查看 [zhangzrjerry.github.io/werewolf](https://zhangzrjerry.github.io/werewolf/)
+> 详情请查看 [zhangzrjerry.github.io/werewolf](https://zhangzrjerry.github.io/werewolf)
 
 ## 环境配置
 
