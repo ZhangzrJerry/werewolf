@@ -51,11 +51,35 @@ class StaticSiteGenerator:
         """生成单个页面"""
         response = client.get(url)
         if response.status_code == 200:
+            content = response.get_data(as_text=True)
+            # 修复静态资源路径，添加baseUrl前缀
+            content = self._fix_static_urls(content)
             page_file = self.output_dir / filename
-            page_file.write_text(response.get_data(as_text=True), encoding="utf-8")
+            page_file.write_text(content, encoding="utf-8")
             print(f"Generated: {filename}")
         else:
             print(f"Failed to generate {url}: {response.status_code}")
+
+    def _fix_static_urls(self, content):
+        """修复HTML中的静态资源URL，添加baseUrl前缀"""
+        import re
+
+        # 修复静态文件路径 href="/static/" -> href="/werewolf/static/"
+        content = re.sub(r'href="/static/', f'href="{self.base_url}static/', content)
+
+        # 修复静态文件路径 src="/static/" -> src="/werewolf/static/"
+        content = re.sub(r'src="/static/', f'src="{self.base_url}static/', content)
+
+        # 修复API路径 href="/api/" -> href="/werewolf/api/"
+        content = re.sub(r'href="/api/', f'href="{self.base_url}api/', content)
+
+        # 修复相对链接路径 href="learning-chain/ -> href="/werewolf/learning-chain/
+        content = re.sub(
+            r'href="learning-chain/', f'href="{self.base_url}learning-chain/', content
+        )
+        content = re.sub(r'href="games/', f'href="{self.base_url}games/', content)
+
+        return content
 
     def _copy_static_files(self):
         """复制静态文件"""
@@ -66,6 +90,9 @@ class StaticSiteGenerator:
             shutil.copytree(static_source, static_target, dirs_exist_ok=True)
             print("Copied static files")
 
+        # 修复JavaScript中的URL路径
+        self._fix_javascript_urls()
+
         # 复制.training目录到static目录中
         training_source = Path("..") / ".training"
         training_target = static_target / ".training"
@@ -75,6 +102,22 @@ class StaticSiteGenerator:
             print("Copied .training directory to static")
         else:
             print("Warning: .training directory not found")
+
+    def _fix_javascript_urls(self):
+        """修复JavaScript文件中的URL路径"""
+        js_file = self.output_dir / "static" / "script.js"
+        if js_file.exists():
+            content = js_file.read_text(encoding="utf-8")
+
+            # 修复API路径，添加baseUrl前缀
+            import re
+
+            content = re.sub(r"'/api/", f"'{self.base_url}api/", content)
+            content = re.sub(r'"/api/', f'"{self.base_url}api/', content)
+            content = re.sub(r"`/api/", f"`{self.base_url}api/", content)
+
+            js_file.write_text(content, encoding="utf-8")
+            print("Fixed JavaScript URLs")
 
     def _generate_api_files(self, client):
         """生成API文件"""
@@ -97,8 +140,11 @@ class StaticSiteGenerator:
         for role in roles:
             response = client.get(f"/learning-chain/{role}")
             if response.status_code == 200:
+                content = response.get_data(as_text=True)
+                # 修复静态资源路径
+                content = self._fix_static_urls(content)
                 role_file = learning_chain_dir / f"{role}.html"
-                role_file.write_text(response.get_data(as_text=True), encoding="utf-8")
+                role_file.write_text(content, encoding="utf-8")
                 print(f"Generated: learning-chain/{role}.html")
 
     def _generate_game_pages(self, client):
@@ -150,13 +196,23 @@ def create_spa_fallback():
     <meta charset="utf-8">
     <title>Redirecting...</title>
     <script>
-        // GitHub Pages SPA fallback
-        sessionStorage.redirect = location.href;
-        location.replace(location.origin + location.pathname.split('/').slice(0, -1).join('/') + '/');
+        // GitHub Pages SPA fallback for /werewolf/
+        const pathSegments = location.pathname.split('/').filter(s => s);
+        const expectedBase = 'werewolf';
+        
+        if (pathSegments[0] !== expectedBase) {
+            // Redirect to the correct base path
+            sessionStorage.redirect = location.href;
+            location.replace(location.origin + '/werewolf/');
+        } else {
+            // Redirect to index.html with the original path stored
+            sessionStorage.redirect = location.href;
+            location.replace(location.origin + '/werewolf/');
+        }
     </script>
 </head>
 <body>
-    Redirecting...
+    Redirecting to werewolf game visualization...
 </body>
 </html>"""
 
