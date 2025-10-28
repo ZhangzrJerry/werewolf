@@ -19,15 +19,20 @@ class GameLogOrganizer:
         target_dir="visualization/static/game_logs",
         reviews_source_dir=".training/reviews",
         reviews_target_dir="visualization/static/source_files/reviews",
+        strategies_source_dir=".training/strategies",
+        strategies_target_dir="visualization/static/source_files/strategies",
     ):
         self.source_dir = Path(source_dir)
         self.target_dir = Path(target_dir)
         self.reviews_source_dir = Path(reviews_source_dir)
         self.reviews_target_dir = Path(reviews_target_dir)
+        self.strategies_source_dir = Path(strategies_source_dir)
+        self.strategies_target_dir = Path(strategies_target_dir)
 
         # 创建目标目录
         self.target_dir.mkdir(parents=True, exist_ok=True)
         self.reviews_target_dir.mkdir(parents=True, exist_ok=True)
+        self.strategies_target_dir.mkdir(parents=True, exist_ok=True)
 
     def extract_game_info(self, log_path):
         """从日志文件中提取游戏信息"""
@@ -249,6 +254,30 @@ class GameLogOrganizer:
         else:
             return "general"
 
+    def copy_strategies(self):
+        """复制策略文件到static目录"""
+        if not self.strategies_source_dir.exists():
+            print("No strategies directory found")
+            return
+
+        print("Copying strategy files...")
+        
+        # 确保目标目录存在
+        self.strategies_target_dir.mkdir(parents=True, exist_ok=True)
+        
+        # 复制所有策略文件
+        for strategy_file in self.strategies_source_dir.glob("*.json"):
+            target_file = self.strategies_target_dir / strategy_file.name
+            shutil.copy2(strategy_file, target_file)
+            print(f"  Copied strategy: {strategy_file.name}")
+        
+        # 如果有backups目录，也复制
+        backups_source = self.strategies_source_dir / "backups"
+        if backups_source.exists():
+            backups_target = self.strategies_target_dir / "backups"
+            shutil.copytree(backups_source, backups_target, dirs_exist_ok=True)
+            print(f"  Copied strategy backups")
+
     def create_summary_stats(self, selected_files):
         """创建统计摘要"""
         stats = {
@@ -323,6 +352,9 @@ class GameLogOrganizer:
 
         # 复制文件
         count = self.copy_selected_logs(selected_files)
+
+        # 复制策略文件
+        self.copy_strategies()
 
         # 创建统计
         stats = self.create_summary_stats(selected_files)

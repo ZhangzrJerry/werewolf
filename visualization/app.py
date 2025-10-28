@@ -14,10 +14,35 @@ current_game_filename = None
 game_data_cache = {}
 
 
+def get_training_directory():
+    """获取.training目录路径，优先使用static中的版本"""
+    base_dir = Path(__file__).parent
+    
+    # 首先检查static/source_files目录中是否有数据（部署版本）
+    static_source_files = base_dir / "static" / "source_files"
+    if static_source_files.exists() and (static_source_files / "strategies").exists():
+        return static_source_files
+    
+    # 然后检查static目录中是否有.training
+    static_training = base_dir / "static" / ".training"
+    if static_training.exists():
+        return static_training
+    
+    # 如果没有，使用项目根目录的.training
+    project_training = base_dir.parent / ".training"
+    return project_training
 def get_game_logs_directory():
     """Get the path to the game logs directory"""
-    base_dir = Path(__file__).parent.parent
-    logs_dir = base_dir / ".training" / "game_logs"
+    base_dir = Path(__file__).parent
+    
+    # 首先检查static目录中是否有game_logs（部署版本）
+    static_logs = base_dir / "static" / "game_logs"
+    if static_logs.exists():
+        return static_logs
+    
+    # 如果没有，使用training目录中的
+    training_dir = get_training_directory()
+    logs_dir = training_dir / "game_logs"
     return logs_dir
 
 
@@ -60,8 +85,8 @@ def get_available_logs():
 # Reviews helper functions
 def get_reviews_directory():
     """Return the reviews base directory path"""
-    base_dir = Path(__file__).parent.parent
-    return base_dir / ".training" / "reviews"
+    training_dir = get_training_directory()
+    return training_dir / "reviews"
 
 
 def find_review_folder_for_log(log_path: Path):
@@ -158,9 +183,9 @@ def read_reviews_from_folder(folder: Path):
 
 def get_role_learning_data(role):
     """获取指定角色的学习数据"""
-    base_dir = Path(__file__).parent.parent
-    reviews_dir = base_dir / ".training" / "reviews"
-    strategies_dir = base_dir / ".training" / "strategies"
+    training_dir = get_training_directory()
+    reviews_dir = training_dir / "reviews"
+    strategies_dir = training_dir / "strategies"
 
     learning_sessions = []
     total_reviews = 0

@@ -76,11 +76,11 @@ header h1 {
 }
 
 .role-link.werewolf {
-    border-color: #fd79a8;
+    border-color: #ff8ab3;
 }
 
 .role-link.witch {
-    border-color: #a29bfe;
+    border-color: #9891ff;
 }
 
 .role-link.villager {
@@ -88,11 +88,11 @@ header h1 {
 }
 
 .role-link.guardian {
-    border-color: #fdcb6e;
+    border-color: #ffd68a;
 }
 
 .role-link.hunter {
-    border-color: #fd79a8;
+    border-color: #ff9ec0;
 }
 
 @media (max-width: 768px) {

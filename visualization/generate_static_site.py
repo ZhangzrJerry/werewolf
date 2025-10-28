@@ -63,6 +63,16 @@ class StaticSiteGenerator:
             shutil.copytree(static_source, static_target, dirs_exist_ok=True)
             print("Copied static files")
 
+        # 复制.training目录到static目录中
+        training_source = Path("..") / ".training"
+        training_target = static_target / ".training"
+
+        if training_source.exists():
+            shutil.copytree(training_source, training_target, dirs_exist_ok=True)
+            print("Copied .training directory to static")
+        else:
+            print("Warning: .training directory not found")
+
     def _generate_api_files(self, client):
         """生成API文件"""
         api_dir = self.output_dir / "api"
