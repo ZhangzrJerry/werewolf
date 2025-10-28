@@ -19,11 +19,14 @@ const router = createRouter({
             name: 'learning-chain',
             component: () => import('../views/LearningChain.vue')
         },
-        // {
-        //     path: '/doc',
-        //     name: 'documentation',
-        //     component: () => import('../views/Documentation.vue')
-        // }
+        {
+            path: '/doc',
+            name: 'documentation',
+            beforeEnter() {
+                // 跳转到 public 下的 doc.html
+                window.location.href = `${import.meta.env.BASE_URL}doc.html`
+            }
+        }
     ]
 })
 

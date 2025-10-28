@@ -8,10 +8,8 @@ export const learningApi = {
     return api.get(`/learning-chain/${role}`)
   },
 
-  // 获取角色学习数据（基于复盘数据）
+  // 获取角色学习数据（基于复盘数据）- 需要在 Flask 中添加对应端点
   getRoleLearningData(role) {
-    // 这个需要根据实际的Flask后端实现来调整
-    // 可能需要调用多个API来组合数据
     return api.get(`/role-learning/${role}`)
   }
 }
