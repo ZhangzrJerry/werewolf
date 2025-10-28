@@ -92,6 +92,9 @@ class StaticSiteGenerator:
 
         # 修复JavaScript中的URL路径
         self._fix_javascript_urls()
+        
+        # 修复静态HTML文件中的URL路径
+        self._fix_static_html_files()
 
         # 复制.training目录到static目录中
         training_source = Path("..") / ".training"
@@ -118,6 +121,25 @@ class StaticSiteGenerator:
 
             js_file.write_text(content, encoding="utf-8")
             print("Fixed JavaScript URLs")
+
+    def _fix_static_html_files(self):
+        """修复静态HTML文件中的URL路径"""
+        import re
+        
+        # 处理doc.html等静态HTML文件
+        for html_file in (self.output_dir / "static").glob("*.html"):
+            content = html_file.read_text(encoding="utf-8")
+            
+            # 修复 /api/ 路径
+            content = re.sub(r'"/api/', f'"{self.base_url}api/', content)
+            content = re.sub(r"'/api/", f"'{self.base_url}api/", content)
+            content = re.sub(r'\(/api/', f'({self.base_url}api/', content)
+            
+            # 修复 url(&quot;/api/xxx&quot;) 这样的HTML编码的路径
+            content = re.sub(r'url\(&quot;/api/', f'url(&quot;{self.base_url}api/', content)
+            
+            html_file.write_text(content, encoding="utf-8")
+            print(f"Fixed URLs in {html_file.name}")
 
     def _generate_api_files(self, client):
         """生成API文件"""
