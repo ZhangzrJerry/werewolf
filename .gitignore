@@ -33,4 +33,4 @@ htmlcov/
 # Training data directory (generated content)
 # .training/
 .training_bak/
-
+build_local/

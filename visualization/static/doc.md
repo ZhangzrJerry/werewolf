@@ -30,9 +30,9 @@ footer {
     /* font-weight: bold; */
 }
 
-section[id="1"] header {
+/* section[id="1"] header {
     display: none !important;
-}
+} */
 
 strong {
   color: var(--primary);
