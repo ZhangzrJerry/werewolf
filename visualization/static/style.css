@@ -36,30 +36,51 @@ header h1 {
     margin: 0;
 }
 
-.doc-link {
+.header-links {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+}
+
+.doc-link,
+.github-link {
     background: rgba(255, 255, 255, 0.2);
     color: white;
     text-decoration: none;
     padding: 12px 20px;
-    border-radius: 25px;
+    border-radius: 12px;
     border: 2px solid rgba(255, 255, 255, 0.3);
     font-weight: bold;
     transition: all 0.3s ease;
     backdrop-filter: blur(10px);
     font-size: 0.9em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
-.doc-link:hover {
+.doc-link:hover,
+.github-link:hover {
     background: rgba(255, 255, 255, 0.3);
     border-color: rgba(255, 255, 255, 0.5);
     transform: translateY(-2px);
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
 }
 
+.github-link svg {
+    width: 20px;
+    height: 20px;
+}
+
 @media (max-width: 768px) {
     .header-top {
         flex-direction: column;
         gap: 15px;
+    }
+
+    .header-links {
+        flex-direction: column;
+        gap: 10px;
     }
 
     header h1 {
