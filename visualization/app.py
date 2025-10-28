@@ -1,6 +1,7 @@
 from flask import Flask, render_template, jsonify, request, send_from_directory
 import os
 import json
+import re
 from pathlib import Path
 from parser import GameLogParser
 from state_manager import GameStateManager
@@ -845,6 +846,260 @@ def api_game_overview():
         }
 
     return jsonify(overview)
+
+
+# === API 端点用于静态站点生成 ===
+
+
+@app.route("/api/games")
+def api_games():
+    """获取所有可用游戏的列表（用于静态站点生成）"""
+    # 优先使用静态文件中的游戏
+    static_logs_dir = Path(__file__).parent / "static" / "game_logs"
+    if static_logs_dir.exists():
+        logs_dir = static_logs_dir
+    else:
+        logs_dir = get_game_logs_directory()
+
+    if not logs_dir.exists():
+        return jsonify([])
+
+    games = []
+
+    # 检查是否有清单文件
+    manifest_file = logs_dir / "games_manifest.json"
+    if manifest_file.exists():
+        try:
+            with open(manifest_file, "r", encoding="utf-8") as f:
+                manifest = json.load(f)
+                for game_info in manifest.get("games", []):
+                    games.append(
+                        {
+                            "id": game_info["filename"].replace(".txt", ""),
+                            "filename": game_info["filename"],
+                            "game_type": game_info["game_type"],
+                            "player_count": game_info["player_count"],
+                            "rounds": game_info["rounds"],
+                            "winner": game_info["winner"],
+                            "timestamp": game_info["timestamp"],
+                        }
+                    )
+            return jsonify(games)
+        except Exception as e:
+            print(f"Error reading manifest: {e}")
+
+    # 回退到文件系统扫描
+    for file_path in logs_dir.glob("*.txt"):
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                content = f.read()
+
+                # 提取基本信息
+                game_type_match = re.search(r"Game Type: (\w+)", content)
+                game_type = game_type_match.group(1) if game_type_match else "unknown"
+
+                players_match = re.search(r"Players: (.+)", content)
+                players = players_match.group(1).split(", ") if players_match else []
+
+                winner_match = re.search(
+                    r"(WEREWOLVES WIN|VILLAGERS WIN|DRAW)", content
+                )
+                winner = winner_match.group(1) if winner_match else "unknown"
+
+                rounds = len(re.findall(r"ROUND \d+", content))
+
+                games.append(
+                    {
+                        "id": file_path.stem,
+                        "filename": file_path.name,
+                        "game_type": game_type,
+                        "player_count": len(players),
+                        "rounds": rounds,
+                        "winner": winner,
+                        "timestamp": file_path.stat().st_mtime,
+                    }
+                )
+        except Exception as e:
+            print(f"Error processing {file_path}: {e}")
+            continue
+
+    # 按时间排序
+    games.sort(key=lambda x: x["timestamp"], reverse=True)
+    return jsonify(games)
+
+
+@app.route("/api/game/<game_id>")
+def api_game_data(game_id):
+    """获取特定游戏的完整数据（用于静态站点生成）"""
+    filename = f"{game_id}.txt"
+
+    # 优先使用静态文件
+    static_logs_dir = Path(__file__).parent / "static" / "game_logs"
+    if static_logs_dir.exists() and (static_logs_dir / filename).exists():
+        log_path = static_logs_dir / filename
+    else:
+        logs_dir = get_game_logs_directory()
+        log_path = logs_dir / filename
+
+    if not log_path.exists():
+        return jsonify({"error": "Game not found"}), 404
+
+    try:
+        # 检查缓存
+        if filename in game_data_cache:
+            parsed_data = game_data_cache[filename]
+        else:
+            parser = GameLogParser(str(log_path))
+            parsed_data = parser.parse()
+            game_data_cache[filename] = parsed_data
+
+        # 创建临时状态管理器来获取完整数据
+        temp_game = GameStateManager(parsed_data)
+
+        # 构建完整的游戏数据
+        game_data = {
+            "id": game_id,
+            "game_info": parsed_data["game_info"],
+            "players": parsed_data["players"],
+            "events": parsed_data["events"],
+            "player_states": temp_game.get_current_state()["players"],
+            "reviews": get_game_reviews(game_id),
+            "metadata": {
+                "total_events": len(parsed_data["events"]),
+                "file_size": log_path.stat().st_size,
+                "created": log_path.stat().st_mtime,
+            },
+        }
+
+        return jsonify(game_data)
+
+    except Exception as e:
+        return jsonify({"error": f"Failed to load game: {str(e)}"}), 500
+
+
+def get_game_reviews(game_id):
+    """获取游戏的review数据"""
+    reviews_dir = Path(__file__).parent / "static" / "source_files" / "reviews"
+
+    if not reviews_dir.exists():
+        return []
+
+    reviews = []
+
+    # 查找与游戏相关的review目录
+    for review_dir in reviews_dir.iterdir():
+        if not review_dir.is_dir():
+            continue
+
+        # 检查目录名是否包含游戏ID
+        if game_id in review_dir.name or any(
+            pattern in review_dir.name.lower()
+            for pattern in [
+                "seer_learning_analysis",
+                "villager_learning_analysis",
+                "werewolf_learning_analysis",
+                "witch_learning_analysis",
+            ]
+        ):
+            # 收集该目录下的所有markdown文件
+            for review_file in review_dir.rglob("*.md"):
+                try:
+                    with open(review_file, "r", encoding="utf-8") as f:
+                        content = f.read()
+
+                    reviews.append(
+                        {
+                            "type": classify_review_file(review_file.name),
+                            "title": review_file.stem.replace("_", " ").title(),
+                            "path": str(review_file.relative_to(reviews_dir)),
+                            "content": content,
+                            "size": len(content),
+                        }
+                    )
+                except Exception as e:
+                    print(f"Error reading review file {review_file}: {e}")
+
+    return reviews
+
+
+def classify_review_file(filename):
+    """分类review文件"""
+    filename_lower = filename.lower()
+
+    if "seer" in filename_lower:
+        return "seer_analysis"
+    elif "werewolf" in filename_lower:
+        return "werewolf_analysis"
+    elif "witch" in filename_lower:
+        return "witch_analysis"
+    elif "villager" in filename_lower:
+        return "villager_analysis"
+    elif "guardian" in filename_lower:
+        return "guardian_analysis"
+    elif "hunter" in filename_lower:
+        return "hunter_analysis"
+    elif "game_analysis" in filename_lower:
+        return "game_analysis"
+    elif "strategy" in filename_lower:
+        return "strategy_analysis"
+    else:
+        return "general"
+
+
+@app.route("/api/reviews")
+def api_reviews():
+    """获取所有available reviews"""
+    reviews_dir = Path(__file__).parent / "static" / "source_files" / "reviews"
+
+    if not reviews_dir.exists():
+        return jsonify([])
+
+    reviews_summary = []
+
+    for review_dir in reviews_dir.iterdir():
+        if not review_dir.is_dir():
+            continue
+
+        review_info = {
+            "name": review_dir.name,
+            "type": classify_review_dir(review_dir.name),
+            "files": [],
+            "total_files": 0,
+        }
+
+        for review_file in review_dir.rglob("*.md"):
+            review_info["files"].append(
+                {
+                    "name": review_file.name,
+                    "path": str(review_file.relative_to(reviews_dir)),
+                    "size": review_file.stat().st_size,
+                }
+            )
+
+        review_info["total_files"] = len(review_info["files"])
+        reviews_summary.append(review_info)
+
+    return jsonify(reviews_summary)
+
+
+def classify_review_dir(dirname):
+    """分类review目录"""
+    dirname_lower = dirname.lower()
+
+    if "seer" in dirname_lower:
+        return "seer_analysis"
+    elif "werewolf" in dirname_lower:
+        return "werewolf_analysis"
+    elif "witch" in dirname_lower:
+        return "witch_analysis"
+    elif "villager" in dirname_lower:
+        return "villager_analysis"
+    elif "guardian" in dirname_lower:
+        return "guardian_analysis"
+    elif "hunter" in dirname_lower:
+        return "hunter_analysis"
+    else:
+        return "general"
 
 
 if __name__ == "__main__":
