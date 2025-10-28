@@ -218,6 +218,83 @@ class TestSeerAgent(unittest.TestCase):
         # Should handle empty targets gracefully
         self.assertEqual(available_targets, [])
 
+    @patch("werewolf.agents._run_model_sync")
+    @patch("werewolf.agents.AgentBase.__init__")
+    def test_seer_night_action_avoids_rechecking(self, mock_init, mock_model_sync):
+        """Test that seer's night_action method correctly filters already checked players"""
+        mock_init.return_value = None
+
+        # Mock model response to choose Charlie
+        mock_response = Mock()
+        mock_response.content = "I choose Charlie"
+        mock_model_sync.return_value = mock_response
+
+        agent = SeerAgent(name="Seer1", role=Role.SEER, model_config_name="test_model")
+        agent.model = Mock()
+
+        # Set up scenario where Alice and Bob are already checked
+        agent.known_roles = {
+            "Seer1": Role.SEER,
+            "Alice": Role.VILLAGER,
+            "Bob": Role.WEREWOLF,
+        }
+
+        # Call night_action with targets including already checked players
+        all_targets = ["Alice", "Bob", "Charlie", "David"]
+        context = "Test context"
+
+        result = agent.night_action(context, all_targets)
+
+        # Verify that the model was called with filtered targets (excluding Alice and Bob)
+        mock_model_sync.assert_called_once()
+        call_args = mock_model_sync.call_args[0]
+        prompt = call_args[0][0].content
+
+        # The prompt should mention available targets excluding already checked players
+        self.assertIn("Charlie", prompt)
+        self.assertIn("David", prompt)
+        self.assertIn("You've already checked: Alice, Bob", prompt)
+
+        # Should return Charlie as that's what the model chose
+        self.assertEqual(result, "Charlie")
+
+    @patch("werewolf.agents._run_model_sync")
+    @patch("werewolf.agents.AgentBase.__init__")
+    def test_seer_night_action_fallback_all_checked(self, mock_init, mock_model_sync):
+        """Test seer night_action fallback when all players are already checked"""
+        mock_init.return_value = None
+
+        # Mock model response
+        mock_response = Mock()
+        mock_response.content = "I choose Alice again"
+        mock_model_sync.return_value = mock_response
+
+        agent = SeerAgent(name="Seer1", role=Role.SEER, model_config_name="test_model")
+        agent.model = Mock()
+
+        # All players already checked
+        agent.known_roles = {
+            "Seer1": Role.SEER,
+            "Alice": Role.VILLAGER,
+            "Bob": Role.WEREWOLF,
+        }
+
+        targets = ["Alice", "Bob"]
+        context = "All players checked scenario"
+
+        result = agent.night_action(context, targets)
+
+        # Should allow re-checking when no unchecked players remain
+        mock_model_sync.assert_called_once()
+        call_args = mock_model_sync.call_args[0]
+        prompt = call_args[0][0].content
+
+        # Should show original targets since all are checked
+        self.assertIn("Alice", prompt)
+        self.assertIn("Bob", prompt)
+
+        self.assertEqual(result, "Alice")
+
 
 class TestWitchAgent(unittest.TestCase):
     """Test Witch agent specific functionality"""
