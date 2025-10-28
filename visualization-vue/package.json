@@ -6,7 +6,7 @@
     "scripts": {
         "dev": "vite",
         "prepare-data": "node scripts/copy-training-data.js",
-        "build": "vite build",
+        "build": "vite build && node scripts/copy-training-data.js",
         "preview": "vite preview",
         "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix --ignore-path .gitignore"
     },

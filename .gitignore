@@ -36,4 +36,4 @@ htmlcov/
 build_local/
 node_modules/
 data/
-visualization-vue/static/
+visualization-vue/assets/.training/
