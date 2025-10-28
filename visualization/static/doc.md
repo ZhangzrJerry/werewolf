@@ -54,7 +54,7 @@ a {
 }
 </style>
 
-![bg opacity:0.1](/api/assets/teaser.png)
+![bg opacity:0.1](./public/teaser.png)
 
 # **会学习的狼人杀智能体**
 
@@ -62,7 +62,7 @@ a {
 
 ---
 
-![bg opacity:0.1](/api/assets/teaser.png)
+![bg opacity:0.1](./public/teaser.png)
 
 ## **1. 项目愿景**
 
@@ -112,7 +112,7 @@ a {
 
 ---
 
-![bg opacity:0.1](/api/assets/teaser.png)
+![bg opacity:0.1](./public/teaser.png)
 
 ## 1. 项目愿景
 
@@ -128,7 +128,7 @@ a {
 
 <br><br><br><br><br><br><br><br><br>
 
-![bg w:60%](/api/assets/image.png)
+![bg w:60%](./public/image.png)
 
 核心循环：自我博弈 → 数据记录 → 复盘分析 → 策略更新 → 新一轮博弈
 
@@ -245,7 +245,7 @@ python run_selfplay.py -n 10 -p 4 -m modelscope_chat/deepseek_chat
 
 ---
 
-![bg opacity:0.1](/api/assets/teaser.png)
+![bg opacity:0.1](./public/teaser.png)
 
 ## 1. 项目愿景
 
@@ -261,7 +261,7 @@ python run_selfplay.py -n 10 -p 4 -m modelscope_chat/deepseek_chat
 
 进行了超 **800 局 9 人** + **100 局 12 人** 板型的混合对局
 
-![](/api/assets/rounds_trend_analysis.png)
+![](./public/rounds_trend_analysis.png)
 
 ---
 
@@ -269,7 +269,7 @@ python run_selfplay.py -n 10 -p 4 -m modelscope_chat/deepseek_chat
 
 第一轮投中狼人概率从 17.12% 提升至 19.07%，基础推理能力缓慢提升
 
-![](/api/assets/first_round_accuracy_trend.png)
+![](./public/first_round_accuracy_trend.png)
 
 ---
 
@@ -277,7 +277,7 @@ python run_selfplay.py -n 10 -p 4 -m modelscope_chat/deepseek_chat
 
 女巫毒药准确率从 52.00% 跃升至 68.00%，毒中狼人概率显著提高
 
-![](/api/assets/witch_poison_accuracy_trend.png)
+![](./public/witch_poison_accuracy_trend.png)
 
 ---
 
@@ -285,7 +285,7 @@ python run_selfplay.py -n 10 -p 4 -m modelscope_chat/deepseek_chat
 
 猎人开枪准确率从 31.43% 提升至 41.43%，带走狼人能力明显进步
 
-![](/api/assets/hunter_shot_accuracy_trend.png)
+![](./public/hunter_shot_accuracy_trend.png)
 
 ---
 
@@ -302,7 +302,7 @@ python run_selfplay.py -n 10 -p 4 -m modelscope_chat/deepseek_chat
 
 ---
 
-![bg opacity:0.1](/api/assets/teaser.png)
+![bg opacity:0.1](./public/teaser.png)
 
 ## 1. 项目愿景
 
@@ -344,7 +344,7 @@ python run_selfplay.py -n 10 -p 4 -m modelscope_chat/deepseek_chat
 
 ---
 
-![bg opacity:0.1](/api/assets/teaser.png)
+![bg opacity:0.1](./public/teaser.png)
 
 # **Thank You!**
 

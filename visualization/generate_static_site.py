@@ -15,10 +15,10 @@ from urllib.parse import urljoin
 
 
 class StaticSiteGenerator:
-    def __init__(self, output_dir="dist"):
+    def __init__(self, output_dir="dist", base_url="/werewolf/"):
         self.app = app
         self.output_dir = Path(output_dir)
-        self.base_url = "/"
+        self.base_url = base_url
 
     def generate(self):
         """生成静态站点"""
@@ -32,6 +32,9 @@ class StaticSiteGenerator:
         with self.app.test_client() as client:
             # 生成主页
             self._generate_page(client, "/", "index.html")
+
+            # 生成学习链页面
+            self._generate_learning_chain_pages(client)
 
             # 复制静态文件
             self._copy_static_files()
@@ -84,6 +87,19 @@ class StaticSiteGenerator:
             games_file = api_dir / "games.json"
             games_file.write_text(response.get_data(as_text=True), encoding="utf-8")
             print("Generated: api/games.json")
+
+    def _generate_learning_chain_pages(self, client):
+        """生成学习链页面"""
+        roles = ["seer", "werewolf", "witch", "villager", "guardian", "hunter"]
+        learning_chain_dir = self.output_dir / "learning-chain"
+        learning_chain_dir.mkdir(exist_ok=True)
+
+        for role in roles:
+            response = client.get(f"/learning-chain/{role}")
+            if response.status_code == 200:
+                role_file = learning_chain_dir / f"{role}.html"
+                role_file.write_text(response.get_data(as_text=True), encoding="utf-8")
+                print(f"Generated: learning-chain/{role}.html")
 
     def _generate_game_pages(self, client):
         """为每个游戏生成详细页面"""
