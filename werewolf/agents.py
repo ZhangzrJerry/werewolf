@@ -581,9 +581,17 @@ Information Sharing:
 
     def night_action(self, context: str, targets: List[str]) -> str:
         """Choose player to check at night"""
+        # Filter out players already checked (excluding self)
+        checked_players = set(self.known_roles.keys()) - {self.name}
+        unchecked_targets = [t for t in targets if t not in checked_players]
+
+        # If all players have been checked, allow re-checking (fallback)
+        available_targets = unchecked_targets if unchecked_targets else targets
+
         prompt = f"""Night Phase - Seer's Check
 
-Possible targets: {', '.join(targets)}
+Available targets: {', '.join(available_targets)}
+{f"(Note: You've already checked: {', '.join(checked_players)})" if checked_players else ""}
 
 Context:
 {context}
@@ -604,7 +612,7 @@ Your choice:"""
         response = _run_model_sync(
             self.model, [Msg(name=self.name, content=prompt, role="user")]
         )
-        return self._extract_choice(_extract_text_content(response), targets)
+        return self._extract_choice(_extract_text_content(response), available_targets)
 
     def discuss(self, context: str, discussion_history: List[Msg]) -> str:
         """Participate in discussion with knowledge of roles"""

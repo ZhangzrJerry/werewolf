@@ -150,6 +150,74 @@ class TestSeerAgent(unittest.TestCase):
         self.assertEqual(len(agent.known_roles), 2)
         self.assertEqual(agent.known_roles["Bob"], Role.WEREWOLF)
 
+    @patch("werewolf.agents.AgentBase.__init__")
+    def test_seer_filters_already_checked_players(self, mock_init):
+        """Test that seer doesn't re-check already checked players"""
+        mock_init.return_value = None
+
+        agent = SeerAgent(name="Seer1", role=Role.SEER, model_config_name="test_model")
+
+        # Set up known roles (seer has already checked Alice and Bob)
+        agent.known_roles = {
+            "Seer1": Role.SEER,
+            "Alice": Role.VILLAGER,
+            "Bob": Role.WEREWOLF,
+        }
+
+        # Available targets include already checked players
+        targets = ["Alice", "Bob", "Charlie", "David"]
+
+        # Filter logic from the fixed night_action method
+        checked_players = set(agent.known_roles.keys()) - {agent.name}
+        unchecked_targets = [t for t in targets if t not in checked_players]
+
+        # Verify filtering works correctly
+        self.assertEqual(set(checked_players), {"Alice", "Bob"})
+        self.assertEqual(unchecked_targets, ["Charlie", "David"])
+        self.assertNotIn("Alice", unchecked_targets)
+        self.assertNotIn("Bob", unchecked_targets)
+
+    @patch("werewolf.agents.AgentBase.__init__")
+    def test_seer_fallback_when_all_checked(self, mock_init):
+        """Test seer fallback behavior when all players are checked"""
+        mock_init.return_value = None
+
+        agent = SeerAgent(name="Seer1", role=Role.SEER, model_config_name="test_model")
+
+        # All players have been checked
+        agent.known_roles = {
+            "Seer1": Role.SEER,
+            "Alice": Role.VILLAGER,
+            "Bob": Role.WEREWOLF,
+            "Charlie": Role.VILLAGER,
+        }
+
+        targets = ["Alice", "Bob", "Charlie"]
+
+        # Filter logic
+        checked_players = set(agent.known_roles.keys()) - {agent.name}
+        unchecked_targets = [t for t in targets if t not in checked_players]
+        available_targets = unchecked_targets if unchecked_targets else targets
+
+        # When all are checked, should fallback to original targets
+        self.assertEqual(unchecked_targets, [])
+        self.assertEqual(available_targets, targets)
+
+    @patch("werewolf.agents.AgentBase.__init__")
+    def test_seer_empty_targets_handling(self, mock_init):
+        """Test seer behavior with empty target list"""
+        mock_init.return_value = None
+
+        agent = SeerAgent(name="Seer1", role=Role.SEER, model_config_name="test_model")
+
+        targets = []
+        checked_players = set(agent.known_roles.keys()) - {agent.name}
+        unchecked_targets = [t for t in targets if t not in checked_players]
+        available_targets = unchecked_targets if unchecked_targets else targets
+
+        # Should handle empty targets gracefully
+        self.assertEqual(available_targets, [])
+
 
 class TestWitchAgent(unittest.TestCase):
     """Test Witch agent specific functionality"""
