@@ -37,3 +37,4 @@ build_local/
 node_modules/
 data/
 visualization-vue/assets/.training/
+visualization-vue/public/.training/

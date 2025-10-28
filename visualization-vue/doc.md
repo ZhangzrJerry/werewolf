@@ -291,14 +291,14 @@ python run_selfplay.py -n 10 -p 4 -m modelscope_chat/deepseek_chat
 
 ## 🎬 现场对战演示
 
-- [🔫 对战演示链接](../../)
+- [🔫 对战演示链接](https://zhangzrjerry.github.io/werewolf/)
 
 ## 🎯 智能体学习链
 
-- 🧙‍♀️ [女巫学习链](../../)
-- 🕵️‍♂️ [预言家学习链](../../)
-- 🐺 [狼人学习链](../../)
-- 👨‍🌾 [村民学习链](../../)
+- 🧙‍♀️ [女巫学习链](https://zhangzrjerry.github.io/werewolf/)
+- 🕵️‍♂️ [预言家学习链](https://zhangzrjerry.github.io/werewolf/)
+- 🐺 [狼人学习链](https://zhangzrjerry.github.io/werewolf/)
+- 👨‍🌾 [村民学习链](https://zhangzrjerry.github.io/werewolf/)
 
 ---
 
