@@ -70,6 +70,9 @@ class StaticSiteGenerator:
         # 修复静态文件路径 src="/static/" -> src="/werewolf/static/"
         content = re.sub(r'src="/static/', f'src="{self.base_url}static/', content)
 
+        # 修复静态文件路径 href="static/" -> href="/werewolf/static/"
+        content = re.sub(r'href="static/', f'href="{self.base_url}static/', content)
+
         # 修复API路径 href="/api/" -> href="/werewolf/api/"
         content = re.sub(r'href="/api/', f'href="{self.base_url}api/', content)
 
@@ -186,8 +189,37 @@ window.fetch = async function(...args) {
                 r"url\(&quot;/api/", f"url(&quot;{self.base_url}api/", content
             )
 
+            # 为doc.html添加返回首页按钮
+            if html_file.name == "doc.html":
+                home_button_html = """
+<div style="position: fixed; top: 20px; left: 20px; z-index: 9999;">
+    <a href="../index.html" style="
+        background: rgba(102, 126, 234, 0.9);
+        color: white;
+        text-decoration: none;
+        padding: 12px 20px;
+        border-radius: 25px;
+        font-weight: bold;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        font-size: 14px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        backdrop-filter: blur(10px);
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    " onmouseover="this.style.background='rgba(102, 126, 234, 1)'; this.style.transform='translateY(-2px)'" 
+       onmouseout="this.style.background='rgba(102, 126, 234, 0.9)'; this.style.transform='translateY(0)'">
+        🏠 返回首页
+    </a>
+</div>"""
+                # 在body标签开始后插入按钮
+                content = re.sub(r"(<body[^>]*>)", r"\1" + home_button_html, content)
+
             html_file.write_text(content, encoding="utf-8")
             print(f"Fixed URLs in {html_file.name}")
+            if html_file.name == "doc.html":
+                print("Added home button to doc.html")
 
     def _generate_api_files(self, client):
         """生成API文件"""
