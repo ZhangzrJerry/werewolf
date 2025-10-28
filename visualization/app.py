@@ -1082,6 +1082,31 @@ def api_reviews():
     return jsonify(reviews_summary)
 
 
+@app.route("/api/doc")
+def api_doc():
+    """提供文档页面"""
+    return send_from_directory("static", "doc.html")
+
+
+@app.route("/api/assets/<path:filename>")
+def serve_assets(filename):
+    """统一提供静态资源文件"""
+    # 支持多个资源目录，按优先级搜索
+    asset_dirs = [
+        Path(__file__).parent / "static" / "public",
+        Path(__file__).parent / "static" / "source_files",
+        Path(__file__).parent.parent / "doc" / "public",  # 兼容旧路径
+    ]
+
+    for asset_dir in asset_dirs:
+        file_path = asset_dir / filename
+        if file_path.exists() and file_path.is_file():
+            return send_from_directory(str(asset_dir), filename)
+
+    # 如果文件不存在，返回404
+    return jsonify({"error": f"Asset '{filename}' not found"}), 404
+
+
 def classify_review_dir(dirname):
     """分类review目录"""
     dirname_lower = dirname.lower()
