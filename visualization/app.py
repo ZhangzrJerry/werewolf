@@ -9,6 +9,7 @@ app = Flask(__name__)
 
 # Store current game state manager
 current_game = None
+current_game_filename = None
 game_data_cache = {}
 
 
@@ -55,6 +56,105 @@ def get_available_logs():
     return log_files
 
 
+# Reviews helper functions
+def get_reviews_directory():
+    """Return the reviews base directory path"""
+    base_dir = Path(__file__).parent.parent
+    return base_dir / ".training" / "reviews"
+
+
+def find_review_folder_for_log(log_path: Path):
+    """Find the best-matching review folder for a given log file.
+
+    Strategy:
+    - If a folder name substring appears in the log filename, prefer that folder.
+    - Otherwise choose the review folder with modification time closest to the log file's mtime.
+    Returns Path or None.
+    """
+    reviews_dir = get_reviews_directory()
+    if not reviews_dir.exists():
+        return None
+
+    # Try to match by timestamp fragment present in filename
+    fname = log_path.name if log_path else ""
+    for sub in reviews_dir.iterdir():
+        if not sub.is_dir():
+            continue
+        if sub.name in fname:
+            return sub
+
+    # Fallback: pick folder with closest mtime to log file
+    try:
+        log_mtime = log_path.stat().st_mtime if log_path.exists() else None
+    except Exception:
+        log_mtime = None
+
+    best = None
+    best_diff = None
+    for sub in reviews_dir.iterdir():
+        if not sub.is_dir():
+            continue
+        try:
+            sub_mtime = sub.stat().st_mtime
+        except Exception:
+            continue
+        if log_mtime is None:
+            # if we don't have log mtime, prefer latest review
+            if best is None or sub_mtime > best.stat().st_mtime:
+                best = sub
+            continue
+
+        diff = abs(sub_mtime - log_mtime)
+        if best is None or diff < best_diff:
+            best = sub
+            best_diff = diff
+
+    return best
+
+
+def read_reviews_from_folder(folder: Path):
+    """Read review artifacts from a folder. Returns a dict or None."""
+    if folder is None:
+        return None
+
+    result = {}
+    try:
+        full_json = folder / "full_analysis.json"
+        lessons_json = folder / "lessons.json"
+        overall_txt = folder / "overall.txt"
+
+        if full_json.exists():
+            with open(full_json, "r", encoding="utf-8") as f:
+                result["full_analysis"] = json.load(f)
+
+        if lessons_json.exists():
+            with open(lessons_json, "r", encoding="utf-8") as f:
+                try:
+                    result["lessons"] = json.load(f)
+                except Exception:
+                    result["lessons_text"] = f.read()
+
+        if overall_txt.exists():
+            with open(overall_txt, "r", encoding="utf-8") as f:
+                result["overall_text"] = f.read()
+
+        # include per-player review files if present
+        reviews = {}
+        for pfile in folder.iterdir():
+            if pfile.is_file() and pfile.name.endswith("_review.txt"):
+                pname = pfile.name.replace("_review.txt", "")
+                with open(pfile, "r", encoding="utf-8") as f:
+                    reviews[pname] = f.read()
+        if reviews:
+            result["per_player"] = reviews
+
+        # if we found anything, return
+        return result if result else None
+    except Exception as e:
+        print(f"Failed to read reviews from {folder}: {e}")
+        return None
+
+
 @app.route("/")
 def index():
     """Main page - show log file selector"""
@@ -70,8 +170,8 @@ def api_logs():
 
 @app.route("/api/load/<filename>")
 def api_load_log(filename):
-    """API endpoint to load a specific log file"""
-    global current_game, game_data_cache
+    """Load a specific log file"""
+    global current_game, current_game_filename
 
     logs_dir = get_game_logs_directory()
     log_path = logs_dir / filename
@@ -96,8 +196,9 @@ def api_load_log(filename):
         except Exception as e:
             return jsonify({"error": f"Failed to parse log file: {str(e)}"}), 500
 
-    # Create state manager
+    # Create state manager and store filename
     current_game = GameStateManager(parsed_data)
+    current_game_filename = filename
 
     return jsonify(
         {
@@ -238,36 +339,306 @@ def api_reset():
     return jsonify(state)
 
 
+def generate_game_reviews_and_lessons(overview):
+    """Generate comprehensive game analysis with reviews and lessons"""
+    analysis = {
+        "game_summary": "",
+        "key_turning_points": [],
+        "player_performance": {},
+        "strategic_insights": [],
+        "lessons_learned": [],
+        "mvp_analysis": "",
+        "critical_mistakes": [],
+    }
+
+    # Game summary
+    winner = overview["final_result"]["winner"]
+    rounds = overview["final_result"]["rounds_played"]
+    werewolves_left = overview["final_result"]["werewolves_remaining"]
+    villagers_left = overview["final_result"]["villagers_remaining"]
+
+    analysis["game_summary"] = (
+        f"经过{rounds}回合的激烈角逐，{winner}方获得胜利。"
+        + f"最终剩余{werewolves_left}名狼人和{villagers_left}名村民阵营玩家。"
+    )
+
+    # Analyze key turning points
+    for death in overview["death_timeline"]:
+        player_name = death["player"]
+        player_info = overview["players"].get(player_name, {})
+        role = player_info.get("role", "unknown")
+
+        if role in ["seer", "witch", "hunter"]:
+            analysis["key_turning_points"].append(
+                {
+                    "round": death["round"],
+                    "description": f"{role}({player_name})在第{death['round']}回合{death['phase']}死亡",
+                    "impact": f"关键角色{role}的死亡显著影响了游戏走向",
+                }
+            )
+
+    # Player performance analysis
+    for name, player in overview["players"].items():
+        performance = {
+            "survival_rounds": player.get("death_round", rounds + 1) - 1,
+            "votes_cast_count": len(player.get("votes_cast", [])),
+            "votes_received_count": len(player.get("votes_received", [])),
+            "actions_taken_count": len(player.get("actions_taken", [])),
+            "performance_rating": "一般",
+        }
+
+        # Rate performance based on survival and activity
+        if player["final_status"] == "alive":
+            if player["role"] == "werewolf":
+                performance["performance_rating"] = (
+                    "优秀" if winner == "werewolf" else "良好"
+                )
+            else:
+                performance["performance_rating"] = (
+                    "优秀" if winner == "villager" else "良好"
+                )
+        else:
+            if performance["survival_rounds"] > rounds * 0.7:
+                performance["performance_rating"] = "良好"
+            elif performance["survival_rounds"] < rounds * 0.3:
+                performance["performance_rating"] = "需改进"
+
+        analysis["player_performance"][name] = performance
+
+    # Strategic insights
+    werewolf_players = [
+        p for p in overview["players"].values() if p["role"] == "werewolf"
+    ]
+    if len(werewolf_players) > 0:
+        werewolf_survival_rate = len(
+            [p for p in werewolf_players if p["final_status"] == "alive"]
+        ) / len(werewolf_players)
+        if werewolf_survival_rate > 0.5:
+            analysis["strategic_insights"].append("狼人团队协作良好，伪装能力较强")
+        else:
+            analysis["strategic_insights"].append("狼人暴露较早，可能存在策略失误")
+
+    # Lessons learned based on game outcome
+    if winner == "werewolf":
+        analysis["lessons_learned"].extend(
+            [
+                "村民方需要更好地利用信息和逻辑推理",
+                "神职角色的保护和配合需要加强",
+                "投票时需要更加谨慎，避免误投关键角色",
+            ]
+        )
+    else:
+        analysis["lessons_learned"].extend(
+            [
+                "狼人需要提高伪装技巧和团队配合",
+                "夜间击杀目标的选择很关键",
+                "白天发言要更加谨慎，避免露出破绽",
+            ]
+        )
+
+    # MVP analysis
+    survivors = [
+        p for p in overview["players"].values() if p["final_status"] == "alive"
+    ]
+    if survivors:
+        mvp_candidate = max(
+            survivors,
+            key=lambda p: analysis["player_performance"][p["name"]]["survival_rounds"],
+        )
+        analysis["mvp_analysis"] = (
+            f"本局MVP候选: {mvp_candidate['name']}({mvp_candidate['role']}) - 存活到最后且表现优异"
+        )
+
+    # Critical mistakes analysis
+    early_deaths = [d for d in overview["death_timeline"] if d["round"] <= 2]
+    for death in early_deaths:
+        player_name = death["player"]
+        player_info = overview["players"].get(player_name, {})
+        if player_info.get("role") in ["seer", "witch"]:
+            analysis["critical_mistakes"].append(
+                {
+                    "description": f"{player_info['role']}过早死亡",
+                    "impact": "关键神职角色保护不足",
+                    "lesson": "神职角色需要更加低调，村民要提供更好保护",
+                }
+            )
+
+    return analysis
+
+
+def extract_performance_rating(review_text):
+    """Extract performance rating from review text."""
+    if not review_text:
+        return "good"
+
+    review_lower = review_text.lower()
+    if any(word in review_lower for word in ["优秀", "excellent", "杰出", "出色"]):
+        return "优秀"
+    elif any(word in review_lower for word in ["差", "poor", "糟糕", "失误", "错误"]):
+        return "需改进"
+    else:
+        return "良好"
+
+
+def transform_reviews_to_frontend_format(reviews_data, overview_data=None):
+    """Transform loaded review data from disk format to frontend-expected format."""
+    transformed = {}
+
+    # Extract overall game summary
+    if "overall_text" in reviews_data:
+        transformed["game_summary"] = reviews_data["overall_text"]
+    elif "full_analysis" in reviews_data and "overall" in reviews_data["full_analysis"]:
+        transformed["game_summary"] = reviews_data["full_analysis"]["overall"]
+
+    # Extract per-player reviews and transform to player_performance format
+    player_perf = {}
+
+    # First, get player statistics from overview if available
+    if overview_data and "players" in overview_data:
+        for player_name, player_data in overview_data["players"].items():
+            player_perf[player_name] = {
+                "performance_rating": "good",
+                "survival_rounds": calculate_survival_rounds(player_data),
+                "votes_cast_count": len(player_data.get("votes_cast", [])),
+                "votes_received_count": len(player_data.get("votes_received", [])),
+                "review": "",  # Will be filled from review data
+            }
+
+    # Then add review text from saved files and extract performance rating
+    if "per_player" in reviews_data:
+        for player_name, review_text in reviews_data["per_player"].items():
+            if player_name not in player_perf:
+                player_perf[player_name] = {
+                    "performance_rating": "good",
+                    "survival_rounds": 0,
+                    "votes_cast_count": 0,
+                    "votes_received_count": 0,
+                }
+            player_perf[player_name]["review"] = review_text
+            # Extract performance rating from review text
+            player_perf[player_name]["performance_rating"] = extract_performance_rating(
+                review_text
+            )
+    elif (
+        "full_analysis" in reviews_data
+        and "per_player" in reviews_data["full_analysis"]
+    ):
+        for player_name, review_text in reviews_data["full_analysis"][
+            "per_player"
+        ].items():
+            if player_name not in player_perf:
+                player_perf[player_name] = {
+                    "performance_rating": "good",
+                    "survival_rounds": 0,
+                    "votes_cast_count": 0,
+                    "votes_received_count": 0,
+                }
+            player_perf[player_name]["review"] = review_text
+            # Extract performance rating from review text
+            player_perf[player_name]["performance_rating"] = extract_performance_rating(
+                review_text
+            )
+
+    transformed["player_performance"] = player_perf
+
+    # Extract lessons and merge by role type (remove strategic insights section)
+    lessons_learned = []
+
+    if "lessons" in reviews_data:
+        if isinstance(reviews_data["lessons"], dict):
+            for role, tips in reviews_data["lessons"].items():
+                if isinstance(tips, list):
+                    # Merge all tips for this role into one entry
+                    merged_tips = "; ".join(tips)
+                    lessons_learned.append(f"{role}: {merged_tips}")
+                else:
+                    lessons_learned.append(f"{role}: {tips}")
+    elif "full_analysis" in reviews_data and "lessons" in reviews_data["full_analysis"]:
+        lessons_data = reviews_data["full_analysis"]["lessons"]
+        if isinstance(lessons_data, dict):
+            for role, tips in lessons_data.items():
+                if isinstance(tips, list):
+                    # Merge all tips for this role into one entry
+                    merged_tips = "; ".join(tips)
+                    lessons_learned.append(f"{role}: {merged_tips}")
+                else:
+                    lessons_learned.append(f"{role}: {tips}")
+
+    # Don't include strategic_insights - remove this section
+    transformed["lessons_learned"] = lessons_learned
+
+    # Add some default empty fields that frontend expects
+    if "key_turning_points" not in transformed:
+        transformed["key_turning_points"] = []
+    if "mvp_analysis" not in transformed:
+        transformed["mvp_analysis"] = ""
+    if "critical_mistakes" not in transformed:
+        transformed["critical_mistakes"] = []
+    # Remove strategic_insights section - not needed
+    if "strategic_insights" not in transformed:
+        transformed["strategic_insights"] = []
+
+    return transformed
+
+
+def calculate_survival_rounds(player_data):
+    """Calculate how many rounds a player survived."""
+    if player_data.get("final_status") == "alive":
+        # Player survived the entire game
+        return player_data.get("total_rounds", 0)
+    else:
+        # Player died, return death round (or 0 if no death round recorded)
+        return player_data.get("death_round", 0)
+
+
 @app.route("/api/overview")
 def api_game_overview():
     """Get comprehensive game overview for quick analysis"""
-    global current_game
+    global current_game, current_game_filename
 
     if current_game is None:
         return jsonify({"error": "No game loaded"}), 400
 
-    # Get the parsed game data
-    game_data = current_game.parsed_data
+    # Get the current log file content
+    raw_log_content = ""
+    try:
+        if current_game_filename:
+            logs_dir = get_game_logs_directory()
+            log_path = logs_dir / current_game_filename
+            if log_path.exists():
+                with open(log_path, "r", encoding="utf-8") as f:
+                    raw_log_content = f.read()
+            else:
+                raw_log_content = "日志文件未找到"
+        else:
+            raw_log_content = "未知日志文件"
+
+    except Exception as e:
+        raw_log_content = f"读取日志失败: {str(e)}"
 
     # Build comprehensive overview
     overview = {
-        "game_info": game_data["game_info"],
+        "game_info": current_game.game_info,
+        "raw_log": raw_log_content,
         "players": {},
         "round_summary": [],
         "death_timeline": [],
         "voting_history": [],
         "special_actions": [],
         "final_result": {},
+        "reviews_and_lessons": {},
     }
 
     # Enhanced player information
-    for name, player in game_data["players"].items():
+    total_rounds = current_game.game_info.get("rounds_played", 0)
+    for name, player in current_game.players.items():
         overview["players"][name] = {
             "name": player.name,
             "role": player.role,
             "final_status": player.status,
             "death_round": player.death_round,
             "death_reason": player.death_reason,
+            "total_rounds": total_rounds,
             "actions_taken": [],
             "votes_cast": [],
             "votes_received": [],
@@ -278,7 +649,7 @@ def api_game_overview():
     current_phase = ""
     round_events = []
 
-    for event in game_data["events"]:
+    for event in current_game.events:
         # Track round changes
         if event.round_num != current_round:
             if round_events:
@@ -333,25 +704,79 @@ def api_game_overview():
             "witch_poison",
             "hunter_skill",
         ]:
+            # Extract actor based on event type
+            actor = "unknown"
+            target = ""
+            result = ""
+
+            if event.event_type == "werewolf_target":
+                # Handle werewolf targets: {"targets": {werewolf: target, ...}}
+                targets = event.data.get("targets", {})
+                if targets:
+                    # For display purposes, show all werewolf actions
+                    for werewolf, werewolf_target in targets.items():
+                        action_info = {
+                            "round": event.round_num,
+                            "phase": event.phase,
+                            "type": event.event_type,
+                            "actor": werewolf,
+                            "target": werewolf_target,
+                            "result": "",
+                        }
+                        overview["special_actions"].append(action_info)
+
+                        # Add to player action tracking
+                        if werewolf in overview["players"]:
+                            overview["players"][werewolf]["actions_taken"].append(
+                                {
+                                    "round": event.round_num,
+                                    "action": event.event_type,
+                                    "target": werewolf_target,
+                                    "result": "",
+                                }
+                            )
+                    continue  # Skip the general handling below
+
+            elif event.event_type == "seer_check":
+                actor = event.data.get("seer", "unknown")
+                target = event.data.get("target", "")
+                result = event.data.get("result", "")
+
+            elif event.event_type in ["witch_save", "witch_poison"]:
+                actor = event.data.get("witch", "unknown")
+                target = event.data.get("target", "")
+                if event.event_type == "witch_save":
+                    saved = event.data.get("saved", False)
+                    result = "已救" if saved else "未救"
+                else:  # witch_poison
+                    used = event.data.get("used", False)
+                    poison_target = event.data.get("poison_target", "")
+                    target = poison_target if poison_target else ""
+                    result = "已用毒" if used else "未用毒"
+
+            elif event.event_type == "hunter_skill":
+                actor = event.data.get("hunter", event.data.get("player", "unknown"))
+                target = event.data.get("target", "")
+                result = event.data.get("result", "")
+
             action_info = {
                 "round": event.round_num,
                 "phase": event.phase,
                 "type": event.event_type,
-                "actor": event.data.get("player", "unknown"),
-                "target": event.data.get("target", ""),
-                "result": event.data.get("result", ""),
+                "actor": actor,
+                "target": target,
+                "result": result,
             }
             overview["special_actions"].append(action_info)
 
             # Add to player action tracking
-            actor = action_info["actor"]
             if actor in overview["players"]:
                 overview["players"][actor]["actions_taken"].append(
                     {
                         "round": event.round_num,
                         "action": event.event_type,
-                        "target": action_info["target"],
-                        "result": action_info["result"],
+                        "target": target,
+                        "result": result,
                     }
                 )
 
@@ -363,9 +788,9 @@ def api_game_overview():
 
     # Determine final result
     overview["final_result"] = {
-        "winner": game_data["game_info"].get("winner", "unknown"),
-        "rounds_played": game_data["game_info"].get("rounds_played", 0),
-        "game_completed": game_data["game_info"].get("game_completed", False),
+        "winner": current_game.game_info.get("winner", "unknown"),
+        "rounds_played": current_game.game_info.get("rounds_played", 0),
+        "game_completed": current_game.game_info.get("game_completed", False),
         "werewolves_remaining": len(
             [
                 p
@@ -381,6 +806,43 @@ def api_game_overview():
             ]
         ),
     }
+
+    # Load reviews and lessons from saved files (fallback to generation)
+    try:
+        reviews_data = None
+        review_folder = None
+        if current_game_filename:
+            logs_dir = get_game_logs_directory()
+            log_path = logs_dir / current_game_filename
+            review_folder = find_review_folder_for_log(log_path)
+            if review_folder:
+                reviews_data = read_reviews_from_folder(review_folder)
+
+        if reviews_data:
+            # Transform loaded review data to expected frontend format
+            transformed_reviews = transform_reviews_to_frontend_format(
+                reviews_data, overview
+            )
+            overview["reviews_and_lessons"] = transformed_reviews
+            overview["reviews_source"] = str(review_folder)
+        else:
+            # Fallback: generate on-the-fly
+            overview["reviews_and_lessons"] = generate_game_reviews_and_lessons(
+                overview
+            )
+            overview["reviews_source"] = "generated"
+    except Exception as e:
+        print(f"Error loading reviews and lessons: {e}")
+        overview["reviews_and_lessons"] = {
+            "error": f"加载或生成分析失败: {str(e)}",
+            "game_summary": "分析功能暂时不可用",
+            "key_turning_points": [],
+            "player_performance": {},
+            "strategic_insights": [],
+            "lessons_learned": [],
+            "mvp_analysis": "",
+            "critical_mistakes": [],
+        }
 
     return jsonify(overview)
 

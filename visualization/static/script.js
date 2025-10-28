@@ -584,6 +584,8 @@ async function showGameOverview() {
         populateDeathTimeline(overview);
         populateVotingHistory(overview);
         populateSpecialActions(overview);
+        populateReviewsAndLessons(overview);
+        populateRawLog(overview);
 
         // Show modal
         document.getElementById('overview-modal').style.display = 'block';
@@ -813,6 +815,129 @@ function populateSpecialActions(overview) {
             </div>
         `;
     });
+
+    content.innerHTML = html;
+}
+
+// Populate raw log content
+function populateRawLog(overview) {
+    const content = document.getElementById('raw-log-content');
+
+    if (!overview.raw_log) {
+        content.innerHTML = '<div class="raw-log">原始日志内容不可用</div>';
+        return;
+    }
+
+    content.innerHTML = `<div class="raw-log">${overview.raw_log}</div>`;
+}
+
+// Populate reviews and lessons content
+function populateReviewsAndLessons(overview) {
+    const content = document.getElementById('reviews-content');
+
+    if (!overview.reviews_and_lessons) {
+        content.innerHTML = '<div class="review-item">分析数据不可用</div>';
+        return;
+    }
+
+    const analysis = overview.reviews_and_lessons;
+    let html = '';
+
+    // Game summary
+    if (analysis.game_summary) {
+        html += `
+            <div class="review-section">
+                <h4>📋 游戏总结</h4>
+                <div class="review-item">
+                    ${analysis.game_summary}
+                </div>
+            </div>
+        `;
+    }
+
+    // Key turning points
+    if (analysis.key_turning_points && analysis.key_turning_points.length > 0) {
+        html += `
+            <div class="review-section">
+                <h4>🔄 关键转折点</h4>
+        `;
+        analysis.key_turning_points.forEach(point => {
+            html += `
+                <div class="review-item turning-point">
+                    <strong>第${point.round}回合:</strong> ${point.description}<br>
+                    <small>${point.impact}</small>
+                </div>
+            `;
+        });
+        html += '</div>';
+    }
+
+    // MVP analysis
+    if (analysis.mvp_analysis) {
+        html += `
+            <div class="review-section">
+                <h4>🏆 MVP分析</h4>
+                <div class="mvp-highlight">
+                    ${analysis.mvp_analysis}
+                </div>
+            </div>
+        `;
+    }
+
+    // Player performance
+    if (analysis.player_performance && Object.keys(analysis.player_performance).length > 0) {
+        html += `
+            <div class="review-section">
+                <h4>👥 玩家表现评价</h4>
+                <div class="performance-grid">
+        `;
+
+        Object.entries(analysis.player_performance).forEach(([name, perf]) => {
+            const playerInfo = overview.players[name];
+            html += `
+                <div class="performance-card">
+                    <strong>${name}</strong><br>
+                    <small>${playerInfo.role} | ${playerInfo.final_status}</small><br>
+                    存活: ${perf.survival_rounds}回合<br>
+                    投票: ${perf.votes_cast_count}次<br>
+                    被投: ${perf.votes_received_count}次<br>
+                    <div class="performance-rating ${perf.performance_rating}">${perf.performance_rating}</div>
+                    ${perf.review ? `<div class="performance-review">${perf.review}</div>` : ''}
+                </div>
+            `;
+        });
+        html += '</div></div>';
+    }
+
+    // Lessons learned (remove strategic insights section)
+    if (analysis.lessons_learned && analysis.lessons_learned.length > 0) {
+        html += `
+            <div class="review-section">
+                <h4>📚 经验教训</h4>
+        `;
+        analysis.lessons_learned.forEach(lesson => {
+            html += `<div class="review-item lesson-learned">${lesson}</div>`;
+        });
+        html += '</div>';
+    }
+
+    // Critical mistakes
+    if (analysis.critical_mistakes && analysis.critical_mistakes.length > 0) {
+        html += `
+            <div class="review-section">
+                <h4>⚠️ 关键失误分析</h4>
+        `;
+        analysis.critical_mistakes.forEach(mistake => {
+            html += `
+                <div class="review-item critical-mistake">
+                    <strong>失误:</strong> ${mistake.description}<br>
+                    <strong>影响:</strong> ${mistake.impact}<br>
+                    <strong>改进建议:</strong> ${mistake.lesson}
+                </div>
+            `;
+        });
+        html += '</div>';
+    }
 
     content.innerHTML = html;
 }

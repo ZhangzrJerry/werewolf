@@ -878,3 +878,142 @@ header h1 {
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(23, 162, 184, 0.3);
 }
+
+/* Raw log styles */
+.raw-log {
+    background: #2d3748;
+    color: #e2e8f0;
+    font-family: 'Courier New', Monaco, monospace;
+    font-size: 13px;
+    line-height: 1.4;
+    padding: 20px;
+    border-radius: 8px;
+    max-height: 600px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    border: 1px solid #4a5568;
+}
+
+.raw-log::-webkit-scrollbar {
+    width: 8px;
+}
+
+.raw-log::-webkit-scrollbar-track {
+    background: #4a5568;
+    border-radius: 4px;
+}
+
+.raw-log::-webkit-scrollbar-thumb {
+    background: #718096;
+    border-radius: 4px;
+}
+
+.raw-log::-webkit-scrollbar-thumb:hover {
+    background: #a0aec0;
+}
+
+/* Reviews and analysis styles */
+.reviews-analysis {
+    padding: 20px 0;
+}
+
+.review-section {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+    border-left: 4px solid #667eea;
+}
+
+.review-section h4 {
+    color: #667eea;
+    margin-bottom: 15px;
+    font-size: 1.2em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.review-item {
+    background: white;
+    border-radius: 6px;
+    padding: 15px;
+    margin-bottom: 10px;
+    border: 1px solid #e9ecef;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.review-item:last-child {
+    margin-bottom: 0;
+}
+
+.turning-point {
+    border-left: 3px solid #dc3545;
+}
+
+.strategic-insight {
+    border-left: 3px solid #28a745;
+}
+
+.lesson-learned {
+    border-left: 3px solid #ffc107;
+}
+
+.critical-mistake {
+    border-left: 3px solid #fd7e14;
+}
+
+.performance-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 15px;
+    margin-top: 15px;
+}
+
+.performance-card {
+    background: white;
+    border-radius: 8px;
+    padding: 15px;
+    border: 1px solid #dee2e6;
+    text-align: center;
+}
+
+.performance-rating {
+    font-weight: bold;
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-size: 0.9em;
+    margin-top: 10px;
+    display: inline-block;
+}
+
+.performance-rating.优秀 {
+    background: #d4edda;
+    color: #155724;
+}
+
+.performance-rating.良好 {
+    background: #d1ecf1;
+    color: #0c5460;
+}
+
+.performance-rating.一般 {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.performance-rating.需改进 {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.mvp-highlight {
+    background: linear-gradient(135deg, #ffd700, #ffed4e);
+    color: #333;
+    font-weight: bold;
+    padding: 15px;
+    border-radius: 8px;
+    text-align: center;
+    margin: 15px 0;
+}
