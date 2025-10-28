@@ -118,41 +118,35 @@ watch(() => route.params.role, async (newRole) => {
 
 async function fetchLearningData() {
     try {
-        // 这里需要实现获取角色学习数据的逻辑
-        // 由于原 Flask 代码中 get_role_learning_data 函数比较复杂
-        // 我们可能需要创建一个专门的 API 端点来获取这些数据
+        // 调用真实的学习数据 API
+        await learningStore.fetchLearningData(role.value)
 
-        // 临时模拟数据结构
-        const mockData = {
-            sessions: [
-                {
-                    date: '2024-01-15',
-                    time: '14:30:00',
-                    reviews: [
-                        {
-                            player: 'Player1',
-                            content: '在这局游戏中，我作为预言家发挥得不错，成功验出了狼人...'
-                        }
-                    ],
-                    strategies: [
-                        '优先验证发言可疑的玩家',
-                        '注意保护自己的身份不被暴露'
-                    ]
-                }
-            ],
-            total_sessions: 1,
-            total_reviews: 1,
-            total_strategies: 2
-        }
-
-        learningData.value = mockData.sessions
-        learningStats.value = {
-            total_sessions: mockData.total_sessions,
-            total_reviews: mockData.total_reviews,
-            total_strategies: mockData.total_strategies
+        const data = learningStore.getLearningDataForRole(role.value)
+        if (data) {
+            learningData.value = data.sessions || []
+            learningStats.value = {
+                total_sessions: data.total_sessions || 0,
+                total_reviews: data.total_reviews || 0,
+                total_strategies: data.total_strategies || 0
+            }
+        } else {
+            // 如果没有数据，显示空状态
+            learningData.value = []
+            learningStats.value = {
+                total_sessions: 0,
+                total_reviews: 0,
+                total_strategies: 0
+            }
         }
     } catch (err) {
         console.error('获取学习数据失败:', err)
+        // 显示错误或使用模拟数据
+        learningData.value = []
+        learningStats.value = {
+            total_sessions: 0,
+            total_reviews: 0,
+            total_strategies: 0
+        }
     }
 }
 </script>

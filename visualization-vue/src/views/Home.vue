@@ -140,8 +140,8 @@ function selectGame(game) {
     gameStore.loadGame(game.filename)
 }
 
-function openGithub() {
-    window.open('https://github.com/ZhangzrJerry/werewolf', '_blank')
+function openGitHub() {
+    window.open('https://github.com/ZhangzrJerry/werewolf', '_blank');
 }
 
 function formatDate(timestamp) {

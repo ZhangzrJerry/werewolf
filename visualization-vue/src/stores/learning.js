@@ -16,7 +16,8 @@ export const useLearningStore = defineStore('learning', () => {
             error.value = null
             currentRole.value = role
 
-            const response = await learningApi.getLearningData(role)
+            // 调用角色学习数据 API
+            const response = await learningApi.getRoleLearningData(role)
             learningData.value[role] = response.data
         } catch (err) {
             error.value = err.message || '获取学习数据失败'

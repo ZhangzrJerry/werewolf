@@ -64,10 +64,10 @@ import { useGameStore } from '../stores/game'
 
 // 组件导入
 import GameOverview from '../components/GameOverview.vue'
-import RoundAnalysis from '../components/RoundAnalysis.vue'
-import PlayerPerformance from '../components/PlayerPerformance.vue'
-import VotingAnalysis from '../components/VotingAnalysis.vue'
-import StrategyAnalysis from '../components/StrategyAnalysis.vue'
+// import RoundAnalysis from '../components/RoundAnalysis.vue'
+// import PlayerPerformance from '../components/PlayerPerformance.vue'
+// import VotingAnalysis from '../components/VotingAnalysis.vue'
+// import StrategyAnalysis from '../components/StrategyAnalysis.vue'
 
 const route = useRoute()
 const gameStore = useGameStore()

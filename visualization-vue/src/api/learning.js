@@ -1,15 +1,16 @@
-import api from './index'
+const BASE = '/werewolf'
 
 export const learningApi = {
-  // 获取角色学习链数据 - 对应 Flask 的 /learning-chain/<role> 路由
-  getLearningData(role) {
-    // 注意：这个是页面路由，不是API路由
-    // 实际的学习数据可能需要从其他API获取
-    return api.get(`/learning-chain/${role}`)
+  async getLearningData(role) {
+    const r = await fetch(`${BASE}/learning-chain/${role}.json`)
+    if (!r.ok) throw new Error('学习链数据未找到')
+    return { data: await r.json() }
   },
 
-  // 获取角色学习数据（基于复盘数据）- 需要在 Flask 中添加对应端点
-  getRoleLearningData(role) {
-    return api.get(`/role-learning/${role}`)
+  async getRoleLearningData(role) {
+    // Role learning data should be exported into werewolf/learning/<role>.json
+    const r = await fetch(`${BASE}/learning/${role}.json`)
+    if (!r.ok) throw new Error('角色学习数据未找到')
+    return { data: await r.json() }
   }
 }

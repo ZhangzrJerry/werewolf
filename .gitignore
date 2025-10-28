@@ -36,3 +36,4 @@ htmlcov/
 build_local/
 node_modules/
 data/
+visualization-vue/static/

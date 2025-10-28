@@ -74,18 +74,21 @@ export const useGameStore = defineStore('game', () => {
             loading.value = true
             error.value = null
 
-            // 加载游戏基本信息
+            // Load pre-generated static game JSON (frontend-only mode)
             const loadResponse = await gameApi.loadGame(filename)
             currentGameFilename.value = filename
             gameData.value = loadResponse.data
 
-            // 获取详细的游戏概览
-            const overviewResponse = await gameApi.getGameOverview()
-            gameOverview.value = overviewResponse.data
+            // The game JSON should contain overview, events, players, etc.
+            gameOverview.value = loadResponse.data
 
-            // 获取当前游戏状态
-            const stateResponse = await gameApi.getGameState()
-            gameState.value = stateResponse.data
+            // Initialize client-side interactive state from events array
+            const events = loadResponse.data.events || []
+            gameState.value = {
+                events,
+                current_index: 0,
+                current_event: events.length > 0 ? toEventDict(events[0]) : null,
+            }
 
         } catch (err) {
             error.value = err.message || '加载游戏失败'
@@ -97,65 +100,46 @@ export const useGameStore = defineStore('game', () => {
 
     async function nextEvent() {
         if (!currentGameFilename.value) return null
-
-        try {
-            const response = await gameApi.nextEvent()
-            gameState.value = response.data
-            return response.data
-        } catch (err) {
-            error.value = err.message || '移动到下一事件失败'
-            console.error('移动到下一事件失败:', err)
-            return null
-        }
+        // client-side step forward
+        if (!gameState.value || !gameState.value.events) return null
+        const idx = Math.min(gameState.value.current_index + 1, gameState.value.events.length - 1)
+        gameState.value.current_index = idx
+        gameState.value.current_event = toEventDict(gameState.value.events[idx])
+        return gameState.value
     }
 
     async function prevEvent() {
         if (!currentGameFilename.value) return null
-
-        try {
-            const response = await gameApi.prevEvent()
-            gameState.value = response.data
-            return response.data
-        } catch (err) {
-            error.value = err.message || '移动到上一事件失败'
-            console.error('移动到上一事件失败:', err)
-            return null
-        }
+        if (!gameState.value || !gameState.value.events) return null
+        const idx = Math.max(gameState.value.current_index - 1, 0)
+        gameState.value.current_index = idx
+        gameState.value.current_event = toEventDict(gameState.value.events[idx])
+        return gameState.value
     }
 
     async function jumpToEvent(eventIndex) {
         if (!currentGameFilename.value) return null
-
-        try {
-            const response = await gameApi.jumpToEvent(eventIndex)
-            gameState.value = response.data
-            return response.data
-        } catch (err) {
-            error.value = err.message || '跳转到事件失败'
-            console.error('跳转到事件失败:', err)
-            return null
-        }
+        if (!gameState.value || !gameState.value.events) return null
+        const idx = Math.max(0, Math.min(eventIndex, gameState.value.events.length - 1))
+        gameState.value.current_index = idx
+        gameState.value.current_event = toEventDict(gameState.value.events[idx])
+        return gameState.value
     }
 
     async function resetGame() {
         if (!currentGameFilename.value) return null
-
-        try {
-            const response = await gameApi.resetGame()
-            gameState.value = response.data
-            return response.data
-        } catch (err) {
-            error.value = err.message || '重置游戏失败'
-            console.error('重置游戏失败:', err)
-            return null
-        }
+        if (!gameState.value || !gameState.value.events) return null
+        gameState.value.current_index = 0
+        gameState.value.current_event = gameState.value.events.length > 0 ? toEventDict(gameState.value.events[0]) : null
+        return gameState.value
     }
 
     async function refreshGameOverview() {
         if (!currentGameFilename.value) return
-
         try {
-            const response = await gameApi.getGameOverview()
+            // load overview from the static game JSON
+            const id = currentGameFilename.value.endsWith('.txt') ? currentGameFilename.value.replace(/\.txt$/i, '') : currentGameFilename.value
+            const response = await gameApi.getGameOverview(id)
             gameOverview.value = response.data
         } catch (err) {
             error.value = err.message || '刷新游戏概览失败'
@@ -169,6 +153,18 @@ export const useGameStore = defineStore('game', () => {
         gameOverview.value = null
         gameState.value = null
         error.value = null
+    }
+
+    // Helper to convert an event object to the shape components expect
+    function toEventDict(event) {
+        if (!event) return null
+        return {
+            round_num: (event.round_num ?? event.round) || null,
+            phase: event.phase || event.phase_name || null,
+            event_type: event.type || event.event_type || null,
+            data: event.data || event.payload || event,
+            timestamp: event.timestamp || null,
+        }
     }
 
     return {

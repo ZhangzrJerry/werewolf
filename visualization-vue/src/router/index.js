@@ -23,7 +23,6 @@ const router = createRouter({
             path: '/doc',
             name: 'documentation',
             beforeEnter() {
-                // 跳转到 public 下的 doc.html
                 window.location.href = `${import.meta.env.BASE_URL}doc.html`
             }
         }
