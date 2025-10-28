@@ -215,12 +215,14 @@ class WerewolfGameOrchestrator:
             if agent.role == Role.SEER and agent.is_alive
         ]
 
+        seer_checks_to_process = []  # Store for later processing
         for seer in seer_agents:
             targets = [p for p in self.game.state.alive_players if p != seer.name]
             if targets:
                 context = self._get_game_context()
                 target = seer.night_action(context, targets)
                 agent_actions[seer.name] = target
+                seer_checks_to_process.append((seer.name, target))
                 self._log(f"  {seer.name} checks: {target}")
 
         # 4. Witch actions (collect first, before executing night phase)
@@ -252,7 +254,7 @@ class WerewolfGameOrchestrator:
             victim = werewolf_target
             context = self._get_game_context()
 
-            # Decide on antidote
+            # Decide on antidote first
             if victim and not witch.antidote_used:
                 should_save = witch.night_action_save(victim, context)
                 if should_save:
@@ -260,8 +262,12 @@ class WerewolfGameOrchestrator:
                     self._log(f"  {witch.name} saves {victim}")
                 else:
                     self._log(f"  {witch.name} does not save {victim}")
+            elif witch.antidote_used:
+                self._log(f"  {witch.name} antidote already used")
+            elif not victim:
+                self._log(f"  {witch.name} no one to save")
 
-            # Decide on poison
+            # Decide on poison second
             if not witch.poison_used:
                 targets = [p for p in self.game.state.alive_players if p != witch.name]
                 poison_target = witch.night_action_poison(context, targets)
@@ -270,12 +276,15 @@ class WerewolfGameOrchestrator:
                     self._log(f"  {witch.name} poisons {poison_target}")
                 else:
                     self._log(f"  {witch.name} does not use poison")
+            else:
+                self._log(f"  {witch.name} poison already used")
 
         # NOW execute night phase ONCE with all collected actions
         night_result = self.game.execute_night_phase(agent_actions)
 
-        # Update seer knowledge and log results
+        # Show seer results immediately after execution
         if "seer_checks" in night_result:
+            self._log("\n[SEER] Learning...")
             for seer_name, checked_role in night_result["seer_checks"].items():
                 target = agent_actions.get(seer_name)
                 if target and seer_name in self.agents:

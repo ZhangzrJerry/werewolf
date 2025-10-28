@@ -431,7 +431,7 @@ def main():
         "--parallel",
         type=int,
         default=1,
-        help="Number of parallel workers (default: 1, max: 8)",
+        help="Number of parallel workers (default: 1, max: 22)",
     )
     parser.add_argument(
         "-v", "--verbose", action="store_true", help="Print detailed game progress"
@@ -451,7 +451,7 @@ def main():
         return
 
     # Limit parallel workers
-    parallel = max(1, min(8, args.parallel))
+    parallel = max(1, min(22, args.parallel))
 
     # Run training
     run_training(
