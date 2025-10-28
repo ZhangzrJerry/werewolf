@@ -34,3 +34,5 @@ htmlcov/
 # .training/
 .training_bak/
 build_local/
+node_modules/
+data/
