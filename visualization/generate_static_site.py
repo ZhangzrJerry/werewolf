@@ -73,6 +73,10 @@ class StaticSiteGenerator:
         # 修复API路径 href="/api/" -> href="/werewolf/api/"
         content = re.sub(r'href="/api/', f'href="{self.base_url}api/', content)
 
+        # 修复CSS中的API路径 url("/api/") -> url("/werewolf/api/")
+        content = re.sub(r'url\("/api/', f'url("{self.base_url}api/', content)
+        content = re.sub(r"url\('/api/", f"url('{self.base_url}api/", content)
+
         # 修复相对链接路径 href="learning-chain/ -> href="/werewolf/learning-chain/
         content = re.sub(
             r'href="learning-chain/', f'href="{self.base_url}learning-chain/', content
@@ -92,7 +96,7 @@ class StaticSiteGenerator:
 
         # 修复JavaScript中的URL路径
         self._fix_javascript_urls()
-        
+
         # 修复静态HTML文件中的URL路径
         self._fix_static_html_files()
 
@@ -125,19 +129,21 @@ class StaticSiteGenerator:
     def _fix_static_html_files(self):
         """修复静态HTML文件中的URL路径"""
         import re
-        
+
         # 处理doc.html等静态HTML文件
         for html_file in (self.output_dir / "static").glob("*.html"):
             content = html_file.read_text(encoding="utf-8")
-            
+
             # 修复 /api/ 路径
             content = re.sub(r'"/api/', f'"{self.base_url}api/', content)
             content = re.sub(r"'/api/", f"'{self.base_url}api/", content)
-            content = re.sub(r'\(/api/', f'({self.base_url}api/', content)
-            
+            content = re.sub(r"\(/api/", f"({self.base_url}api/", content)
+
             # 修复 url(&quot;/api/xxx&quot;) 这样的HTML编码的路径
-            content = re.sub(r'url\(&quot;/api/', f'url(&quot;{self.base_url}api/', content)
-            
+            content = re.sub(
+                r"url\(&quot;/api/", f"url(&quot;{self.base_url}api/", content
+            )
+
             html_file.write_text(content, encoding="utf-8")
             print(f"Fixed URLs in {html_file.name}")
 
