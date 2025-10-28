@@ -15,7 +15,7 @@
 - 自我对弈：批量开局、可中断恢复、策略与复盘自动持久化
 - 易于扩展：清晰的编排器与 Agent 接口，便于添加新角色/策略
 
-> 更多展示请查看 [doc/index.md](./doc/index.md)
+> 更多展示请查看 [doc/index.md](./index.pdf)
 
 ## 环境配置
 
@@ -99,21 +99,6 @@ python run_selfplay.py -v          # 详细过程打印
 - `DEFAULT_MODEL`：默认模型（当未检测到可用 Key 时回退）
 - `GAME_CONFIG`：默认 `game_type / max_rounds / discussion_rounds / verbose`
 - 预设玩家名：`PLAYER_NAMES_6/9/12`
-
-## 项目结构
-
-```
-.
-├─ werewolf/                # 核心包
-│  ├─ orchestrator.py       # 多智能体编排（讨论/投票/夜间行动）
-│  ├─ agents.py             # 角色 Agent 与策略注入
-│  ├─ werewolf_game.py      # 规则与状态机
-│  └─ config.py             # 模型与默认配置
-├─ run_game.py              # 单局对战入口
-├─ run_selfplay.py          # 自我对弈训练入口
-├─ tests/                   # 单元测试
-└─ doc/                     # 项目介绍与演示素材（见下）
-```
 
 ## 常见问题（FAQ）
 
