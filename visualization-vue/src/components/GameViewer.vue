@@ -2,15 +2,19 @@
     <div class="werewolf-viewer">
         <!-- Game selector -->
         <div v-if="!currentGame" class="section">
-            <h2>选择游戏日志</h2>
+            <h2>🎮 选择游戏日志</h2>
             <div v-if="loading" class="loading">加载中...</div>
             <div v-else class="log-list">
                 <div v-for="game in games" :key="game.log_file" class="log-item" @click="loadGame(game)">
-                    <h3>游戏 #{{ game.game_num }}</h3>
+                    <div class="log-header">
+                        <h3>游戏 #{{ game.game_num }}</h3>
+                        <span class="winner-badge" :class="game.winner">{{ game.winner === 'werewolves' ? '🐺 狼人' :
+                            game.winner === 'villagers' ? '👥 村民' : game.winner }}</span>
+                    </div>
                     <div class="log-meta">
-                        <div>时间: {{ formatTime(game.timestamp) }}</div>
-                        <div>胜者: {{ game.winner }}</div>
-                        <div>回合: {{ game.rounds }}</div>
+                        <div class="meta-item">⏱️ {{ formatTime(game.timestamp) }}</div>
+                        <div class="meta-item">🔄 {{ game.rounds }} 回合</div>
+                        <div class="meta-item">👥 {{ game.player_count || '?' }} 玩家</div>
                     </div>
                 </div>
             </div>
@@ -219,6 +223,9 @@ export default {
                 const parsedData = gameParser.value.parseGameLog(rawLog.value)
                 currentGame.value = parsedData
                 currentEventIndex.value = 0
+                console.log('Game loaded:', parsedData)
+                console.log('Players:', parsedData.players)
+                console.log('Events:', parsedData.events)
             } else {
                 alert('无法加载游戏日志')
             }
@@ -246,8 +253,19 @@ export default {
                 classes.push('alive')
             }
 
-            if (currentState?.revealed && player.role === 'werewolf') {
-                classes.push('werewolf')
+            // Add role-based classes for styling
+            if (player.role === 'werewolf') {
+                classes.push('role-werewolf')
+            } else if (player.role === 'villager') {
+                classes.push('role-villager')
+            } else if (player.role === 'seer') {
+                classes.push('role-seer')
+            } else if (player.role === 'witch') {
+                classes.push('role-witch')
+            } else if (player.role === 'hunter') {
+                classes.push('role-hunter')
+            } else if (player.role === 'guardian') {
+                classes.push('role-guardian')
             }
 
             return classes
@@ -261,7 +279,14 @@ export default {
         function getCurrentPlayerState(playerName) {
             // Get current player state based on events up to currentEventIndex
             if (!gameParser.value) return { status: 'alive' }
-            return gameParser.value.getPlayerStateAtEvent(playerName, currentEventIndex.value)
+            if (!gameParser.value.getPlayerStateAtEvent) return { status: 'alive' }
+
+            try {
+                return gameParser.value.getPlayerStateAtEvent(playerName, currentEventIndex.value)
+            } catch (e) {
+                console.error('Error getting player state:', e)
+                return { status: 'alive' }
+            }
         }
 
         function formatEventHtml(event) {
@@ -269,7 +294,7 @@ export default {
 
             switch (event.event_type) {
                 case 'phase_start':
-                    html += `<p>进入 <strong>${phaseTranslations[event.data.phase]}</strong> 阶段</p>`
+                    html += `<p>进入 <strong>${phaseTranslations[event.data.phase] || event.data.phase}</strong> 阶段</p>`
                     break
 
                 case 'guardian_action':
@@ -283,11 +308,41 @@ export default {
                     break
 
                 case 'werewolf_target':
-                    html += '<div class="event-data"><p><strong>狼人选择目标:</strong></p>'
-                    for (const [werewolf, target] of Object.entries(event.data.targets)) {
-                        html += `<p>🐺 ${werewolf} → ${target}</p>`
+                    html += '<div class="event-data"><p><strong>🐺 狼人选择目标:</strong></p>'
+                    if (event.data.targets && typeof event.data.targets === 'object') {
+                        for (const [werewolf, target] of Object.entries(event.data.targets)) {
+                            html += `<p>  ${werewolf} → ${target}</p>`
+                        }
                     }
                     html += '</div>'
+                    break
+
+                case 'seer_check':
+                    html += `<div class="event-data"><p>🔮 预言家 <strong>${event.data.seer}</strong> 查验了 <strong>${event.data.target}</strong></p></div>`
+                    break
+
+                case 'seer_result':
+                    html += `<div class="event-data"><p>🔮 预言家 <strong>${event.data.seer}</strong> 得知 <strong>${event.data.target}</strong> 是 <strong>${event.data.result === 'werewolf' ? '狼人' : '村民'}</strong></p></div>`
+                    break
+
+                case 'witch_save':
+                    if (event.data.saved) {
+                        html += `<div class="event-data"><p>💊 女巫 <strong>${event.data.witch}</strong> 救了 <strong>${event.data.target}</strong></p></div>`
+                    } else {
+                        html += `<div class="event-data"><p>💊 女巫 <strong>${event.data.witch}</strong> 没有救人</p></div>`
+                    }
+                    break
+
+                case 'witch_poison':
+                    if (event.data.used) {
+                        html += `<div class="event-data"><p>☠️ 女巫 <strong>${event.data.witch}</strong> 对 <strong>${event.data.target}</strong> 使用了毒药</p></div>`
+                    } else {
+                        html += `<div class="event-data"><p>☠️ 女巫 <strong>${event.data.witch}</strong> 没有使用毒药</p></div>`
+                    }
+                    break
+
+                case 'death_announcement':
+                    html += `<div class="death-announcement"><p>💀 <strong>${event.data.player}</strong> 在夜晚死亡</p></div>`
                     break
 
                 case 'discussion':
@@ -304,8 +359,22 @@ export default {
                 case 'elimination':
                     html += `<div class="death-announcement">`
                     html += `<p>⚖️ <strong>${event.data.player}</strong> 被投票淘汰</p>`
-                    html += `<p>角色: ${roleTranslations[event.data.role] || event.data.role}</p>`
+                    if (event.data.role) {
+                        html += `<p>角色: ${roleTranslations[event.data.role] || event.data.role}</p>`
+                    }
                     html += `</div>`
+                    break
+
+                case 'hunter_skill':
+                    html += `<div class="death-announcement"><p>🏹 猎人 <strong>${event.data.hunter}</strong> 射杀了 <strong>${event.data.target}</strong></p></div>`
+                    break
+
+                case 'safe_night':
+                    html += `<div class="event-data"><p>✨ ${event.data.message}</p></div>`
+                    break
+
+                case 'game_event':
+                    html += `<div class="event-data"><p>${event.data}</p></div>`
                     break
 
                 default:
@@ -389,26 +458,59 @@ export default {
         }
 
         function getGameSummary() {
-            if (!currentGame.value) return ''
+            if (!currentGame.value) return '<p>没有游戏数据</p>'
             const info = currentGame.value.game_info || {}
-            return `
-        <p><strong>胜利方:</strong> ${info.winner || '未知'}</p>
-        <p><strong>回合数:</strong> ${info.rounds_played || '未知'}</p>
-        <p><strong>游戏类型:</strong> ${info.game_type || '标准狼人杀'}</p>
-      `
+            const players = currentGame.value.players || {}
+
+            // Count players by role
+            const roleCounts = {}
+            Object.values(players).forEach(p => {
+                roleCounts[p.role] = (roleCounts[p.role] || 0) + 1
+            })
+
+            let html = '<div class="game-summary">'
+            html += `<p><strong>🏆 胜利方:</strong> ${info.winner === 'werewolves' ? '🐺 狼人阵营' : info.winner === 'villagers' ? '👥 村民阵营' : '未知'}</p>`
+            html += `<p><strong>⏱️ 回合数:</strong> ${info.rounds_played || '未知'}</p>`
+            html += `<p><strong>👥 总玩家数:</strong> ${Object.keys(players).length}</p>`
+            html += `<p><strong>🎮 游戏类型:</strong> ${info.game_type || '标准狼人杀'}</p>`
+
+            if (info.werewolf_team && info.werewolf_team.length > 0) {
+                html += `<p><strong>🐺 狼人阵营:</strong> ${info.werewolf_team.join(', ')}</p>`
+            }
+
+            html += '<p><strong>⚔️ 角色分布:</strong></p><ul>'
+            Object.entries(roleCounts).forEach(([role, count]) => {
+                if (role !== 'unknown') {
+                    html += `<li>${getRoleTranslation(role)}: ${count}人</li>`
+                }
+            })
+            html += '</ul></div>'
+
+            return html
         }
 
         function getPlayersOverview() {
-            if (!currentGame.value?.players) return ''
-            return Object.values(currentGame.value.players).map(player => {
+            if (!currentGame.value?.players) return '<p>没有玩家数据</p>'
+            const players = Object.values(currentGame.value.players)
+
+            let html = '<div class="players-overview">'
+            players.forEach(player => {
                 const finalState = getCurrentPlayerState(player.name)
-                return `
-          <div class="player-overview">
-            <strong>${player.name}</strong> - ${getRoleTranslation(player.role)} 
-            (${finalState?.status === 'alive' ? '存活' : '死亡'})
-          </div>
-        `
-            }).join('')
+                const statusIcon = finalState?.status === 'alive' ? '✅' : '💀'
+                html += `
+                    <div class="player-overview-card">
+                        <div class="player-info">
+                            <span class="status-icon">${statusIcon}</span>
+                            <strong>${player.name}</strong> 
+                            <span class="role-badge">${getRoleTranslation(player.role)}</span>
+                        </div>
+                        <div class="player-status">${finalState?.status === 'alive' ? '存活' : '已死亡'}</div>
+                        ${player.death_round ? `<div class="death-round">第 ${player.death_round} 轮死亡</div>` : ''}
+                    </div>
+                `
+            })
+            html += '</div>'
+            return html
         }
 
         function getDeathTimeline() {
@@ -518,6 +620,7 @@ export default {
     text-align: center;
     min-width: 120px;
     border: 2px solid #ddd;
+    transition: all 0.3s ease;
 }
 
 .player-card.alive {
@@ -529,8 +632,147 @@ export default {
     opacity: 0.7;
 }
 
-.player-card.werewolf {
-    border-color: #6f42c1;
+.player-name {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.player-role {
+    font-size: 12px;
+    color: #666;
+    margin-bottom: 8px;
+}
+
+.player-status {
+    font-size: 12px;
+    color: #999;
+}
+
+/* 三种颜色方案：狼人(淡紫色)、村民(淡绿色)、神职者(淡金色) */
+.player-card.role-werewolf {
+    background: white;
+    color: #5b21b6;
+    border: 2px solid #ddd6fe;
+}
+
+.player-card.role-werewolf .player-name {
+    font-weight: bold;
+    color: #5b21b6;
+}
+
+.player-card.role-werewolf .player-role {
+    font-weight: bold;
+    color: #5b21b6;
+}
+
+.player-card.role-werewolf .player-status {
+    color: #5b21b6;
+}
+
+/* 村民及所有非特殊职业 */
+.player-card.role-villager {
+    background: white;
+    color: #065f46;
+    border: 2px solid #a7f3d0;
+}
+
+.player-card.role-villager .player-name {
+    font-weight: bold;
+    color: #065f46;
+}
+
+.player-card.role-villager .player-role {
+    color: #065f46;
+}
+
+.player-card.role-villager .player-status {
+    color: #065f46;
+}
+
+/* 神职者(预言家、女巫、猎人、守卫) */
+.player-card.role-seer,
+.player-card.role-witch,
+.player-card.role-hunter,
+.player-card.role-guardian {
+    background: white;
+    color: #92400e;
+    border: 2px solid #fde68a;
+}
+
+.player-card.role-seer .player-name,
+.player-card.role-witch .player-name,
+.player-card.role-hunter .player-name,
+.player-card.role-guardian .player-name {
+    font-weight: bold;
+    color: #92400e;
+}
+
+.player-card.role-seer .player-role,
+.player-card.role-witch .player-role,
+.player-card.role-hunter .player-role,
+.player-card.role-guardian .player-role {
+    font-weight: bold;
+    color: #92400e;
+}
+
+.player-card.role-seer .player-status,
+.player-card.role-witch .player-status,
+.player-card.role-hunter .player-status,
+.player-card.role-guardian .player-status {
+    color: #92400e;
+}
+
+/* 死亡玩家 - 彩色背景 + 白文字 */
+.player-card.dead.role-werewolf {
+    background: #ede9fe;
+    color: white;
+    border: 2px solid #ddd6fe;
+    opacity: 1;
+}
+
+.player-card.dead.role-werewolf .player-name,
+.player-card.dead.role-werewolf .player-role,
+.player-card.dead.role-werewolf .player-status {
+    color: white;
+}
+
+.player-card.dead.role-villager {
+    background: #d1fae5;
+    color: white;
+    border: 2px solid #a7f3d0;
+    opacity: 1;
+}
+
+.player-card.dead.role-villager .player-name,
+.player-card.dead.role-villager .player-role,
+.player-card.dead.role-villager .player-status {
+    color: white;
+}
+
+.player-card.dead.role-seer,
+.player-card.dead.role-witch,
+.player-card.dead.role-hunter,
+.player-card.dead.role-guardian {
+    background: #fef3c7;
+    color: white;
+    border: 2px solid #fde68a;
+    opacity: 1;
+}
+
+.player-card.dead.role-seer .player-name,
+.player-card.dead.role-seer .player-role,
+.player-card.dead.role-seer .player-status,
+.player-card.dead.role-witch .player-name,
+.player-card.dead.role-witch .player-role,
+.player-card.dead.role-witch .player-status,
+.player-card.dead.role-hunter .player-name,
+.player-card.dead.role-hunter .player-role,
+.player-card.dead.role-hunter .player-status,
+.player-card.dead.role-guardian .player-name,
+.player-card.dead.role-guardian .player-role,
+.player-card.dead.role-guardian .player-status {
+    color: white;
 }
 
 .event-content {
@@ -670,5 +912,155 @@ export default {
     background: #f8f9fa;
     padding: 16px;
     font-size: 12px;
+}
+
+/* Enhanced styles for game list */
+.log-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.winner-badge {
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: bold;
+    color: white;
+}
+
+.winner-badge.werewolves {
+    background: #dc3545;
+}
+
+.winner-badge.villagers {
+    background: #28a745;
+}
+
+.meta-item {
+    display: inline-block;
+    margin-right: 16px;
+    font-size: 13px;
+    color: #666;
+}
+
+/* Game summary styles */
+.game-summary {
+    background: #f8f9fa;
+    padding: 16px;
+    border-radius: 8px;
+}
+
+.game-summary p {
+    margin: 8px 0;
+}
+
+.game-summary ul {
+    margin: 8px 0 8px 20px;
+}
+
+.game-summary li {
+    margin: 4px 0;
+}
+
+/* Players overview styles */
+.players-overview {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 12px;
+}
+
+.player-overview-card {
+    background: white;
+    border: 2px solid #dee2e6;
+    border-radius: 8px;
+    padding: 12px;
+    transition: all 0.3s ease;
+}
+
+.player-overview-card:hover {
+    border-color: #007bff;
+    box-shadow: 0 4px 12px rgba(0, 123, 255, 0.15);
+}
+
+.player-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.status-icon {
+    font-size: 20px;
+}
+
+.role-badge {
+    background: #e9ecef;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    color: #495057;
+}
+
+.player-status {
+    font-size: 13px;
+    color: #666;
+    margin-top: 4px;
+}
+
+.death-round {
+    font-size: 12px;
+    color: #999;
+    margin-top: 4px;
+}
+
+/* Event detail styles */
+.event-type {
+    font-weight: bold;
+    color: #007bff;
+    margin-bottom: 8px;
+    font-size: 16px;
+}
+
+.event-data {
+    padding: 12px;
+    background: #f8f9fa;
+    border-left: 4px solid #007bff;
+    border-radius: 4px;
+}
+
+.event-data p {
+    margin: 4px 0;
+    font-size: 14px;
+}
+
+.discussion-bubble {
+    background: #e3f2fd;
+    padding: 12px;
+    border-radius: 8px;
+    margin: 8px 0;
+}
+
+.speaker {
+    font-weight: bold;
+    color: #1976d2;
+    margin-bottom: 4px;
+}
+
+.statement {
+    color: #333;
+    font-style: italic;
+}
+
+.death-announcement {
+    background: #ffebee;
+    padding: 12px;
+    border-radius: 8px;
+    border-left: 4px solid #d32f2f;
+}
+
+.death-announcement p {
+    margin: 4px 0;
 }
 </style>
