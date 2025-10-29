@@ -30,16 +30,15 @@ export default {
 <style scoped>
 header {
     background-color: transparent;
-    color: #e6e6e6;
+    color: white;
     padding: 20px 0;
-    /* border-bottom: 1px solid #dee2e6; */
 }
 
 .header-top {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    max-width: 1200px;
+    max-width: 1400px;
     margin: 0 auto;
     padding: 0 20px;
 }
@@ -47,7 +46,7 @@ header {
 h1 {
     margin: 0;
     font-size: 28px;
-    color: #1a1a2e;
+    color: white;
 }
 
 .header-links {
@@ -57,37 +56,37 @@ h1 {
 }
 
 .header-links a {
-    color: #333;
+    color: white;
     text-decoration: none;
     padding: 8px 16px;
     border-radius: 4px;
     transition: all 0.3s ease;
     font-size: 14px;
     font-weight: 500;
-    border: 1px solid transparent;
+    border: 1px solid white;
 }
 
 .header-links a:hover {
-    background-color: #e9ecef;
+    background-color: rgba(255, 255, 255, 0.1);
     transform: translateY(-2px);
 }
 
 .doc-link {
-    border-color: #007bff;
-    color: #007bff;
+    border-color: white;
+    color: white;
 }
 
 .doc-link:hover {
-    background-color: rgba(0, 123, 255, 0.1);
+    background-color: rgba(255, 255, 255, 0.2);
 }
 
 .github-link {
-    border-color: #6c757d;
-    color: #6c757d;
+    border-color: white;
+    color: white;
 }
 
 .github-link:hover {
-    background-color: rgba(108, 117, 125, 0.1);
+    background-color: rgba(255, 255, 255, 0.2);
 }
 
 .container {
