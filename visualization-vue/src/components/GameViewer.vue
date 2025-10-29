@@ -528,6 +528,189 @@ export default {
             return '<p>死亡时间线功能开发中...</p>'
         }
 
+        function getVotesOverview() {
+            let html = '<div class="votes-table">'
+
+            // Group votes by round
+            const votesByRound = {}
+            const votes = gameParser.value?.events?.filter(e => e.event_type === 'vote') || []
+
+            if (votes.length === 0) {
+                return '<p>暂无投票记录</p>'
+            }
+
+            // Group votes by round number
+            votes.forEach(vote => {
+                const roundNum = vote.round_num
+                if (!votesByRound[roundNum]) {
+                    votesByRound[roundNum] = []
+                }
+                votesByRound[roundNum].push(vote)
+            })
+
+            // Display votes organized by round
+            Object.keys(votesByRound).sort((a, b) => parseInt(a) - parseInt(b)).forEach(round => {
+                const roundVotes = votesByRound[round]
+                html += `<div class="vote-round"><h4>第 ${round} 轮投票</h4>`
+                html += '<table class="vote-details">'
+                html += '<thead><tr><th>投票者</th><th>投票给</th></tr></thead><tbody>'
+
+                // Count votes by target
+                const voteCount = {}
+                roundVotes.forEach(v => {
+                    const target = v.data.target
+                    if (!voteCount[target]) {
+                        voteCount[target] = { voters: [], count: 0 }
+                    }
+                    voteCount[target].voters.push(v.data.voter)
+                    voteCount[target].count++
+                })
+
+                // Show individual votes
+                roundVotes.forEach(v => {
+                    html += `<tr><td>${v.data.voter}</td><td>${v.data.target}</td></tr>`
+                })
+
+                html += '</tbody></table>'
+
+                // Show vote summary
+                html += '<div class="vote-summary">'
+                html += '<h5>投票统计:</h5>'
+                Object.entries(voteCount).forEach(([target, data]) => {
+                    const eliminated = roundVotes.some(e =>
+                        e.event_type === 'elimination' || (gameParser.value?.events?.find(ev =>
+                            ev.round_num === round &&
+                            ev.event_type === 'elimination' &&
+                            ev.data?.target === target
+                        ))
+                    )
+                    const badge = gameParser.value?.events?.find(ev =>
+                        ev.round_num === round &&
+                        ev.event_type === 'elimination'
+                    )?.data?.target === target ? ' ✓ 淘汰' : ''
+                    html += `<div class="vote-count">${target}: ${data.count}票 (${data.voters.join(', ')})${badge}</div>`
+                })
+                html += '</div>'
+                html += '</div>'
+            })
+
+            html += '</div>'
+            return html
+        }
+
+        function getGameReview() {
+            let html = '<div class="review-content">'
+
+            const game = currentGame.value
+            if (!game) return '<p>暂无游戏数据</p>'
+
+            // Calculate game stats
+            const allEvents = gameParser.value?.events || []
+            const players = Object.values(game.players || {})
+            const deathCount = players.filter(p => {
+                const state = getCurrentPlayerState(p.name)
+                return state?.status === 'dead'
+            }).length
+            const aliveCount = players.length - deathCount
+
+            // Game basic info
+            html += `<div class="review-section">
+                <h4>📊 游戏基本信息</h4>
+                <div class="game-info-grid">
+                    <div class="info-item">
+                        <span class="info-label">胜利方:</span>
+                        <span class="info-value">${game.winner === 'werewolves' ? '🐺 狼人阵营' : game.winner === 'villagers' ? '👥 村民阵营' : game.winner}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">游戏回合:</span>
+                        <span class="info-value">${game.rounds || '?'} 回合</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">参与玩家:</span>
+                        <span class="info-value">${players.length} 人</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">存活/死亡:</span>
+                        <span class="info-value">${aliveCount}/${deathCount}</span>
+                    </div>
+                </div>
+            </div>`
+
+            // Player performance
+            html += `<div class="review-section">
+                <h4>🎯 玩家表现</h4>
+                <div class="player-ratings">`
+
+            // Categorize players by role - create dynamic categories
+            const roleCategories = {}
+            
+            players.forEach(player => {
+                const role = player.role.toLowerCase()
+                if (!roleCategories[role]) {
+                    roleCategories[role] = []
+                }
+                const state = getCurrentPlayerState(player.name)
+                roleCategories[role].push({ player, state })
+            })
+
+            // Define role order for display
+            const roleOrder = ['werewolf', 'seer', 'witch', 'guardian', 'hunter', 'villager']
+            
+            // Display by role category in preferred order, then any remaining roles
+            const orderedRoles = roleOrder.filter(r => roleCategories[r]).concat(
+                Object.keys(roleCategories).filter(r => !roleOrder.includes(r))
+            )
+
+            orderedRoles.forEach(role => {
+                const playersInRole = roleCategories[role]
+                if (playersInRole && playersInRole.length > 0) {
+                    html += `<div class="role-group">
+                        <h5>${getRoleTranslation(role)}:</h5>`
+
+                    playersInRole.forEach(({ player, state }) => {
+                        const statusIcon = state?.status === 'alive' ? '✅' : '💀'
+                        const statusText = state?.status === 'alive' ? '存活' : `第${player.death_round || '?'}轮死亡`
+                        html += `<div class="rating-item">
+                            <span class="status-icon">${statusIcon}</span>
+                            <span class="player-name">${player.name}</span>
+                            <span class="player-result">${statusText}</span>
+                        </div>`
+                    })
+
+                    html += '</div>'
+                }
+            })
+
+            html += `</div></div>`
+
+            // Game evaluation
+            const werewolfPlayers = players.filter(p => p.role.toLowerCase() === 'werewolf')
+            const villagerPlayers = players.filter(p => p.role.toLowerCase() !== 'werewolf')
+            const winningTeam = game.winner === 'werewolves' ? werewolfPlayers : villagerPlayers
+
+            html += `<div class="review-section">
+                <h4>💭 比赛评价</h4>
+                <div class="evaluation">
+                    <p><strong>胜利阵营：</strong>${game.winner === 'werewolves' ? '🐺 狼人' : '👥 村民'}</p>
+                    <p><strong>获胜方式：</strong>${game.winner === 'werewolves' ? '消灭全部村民' : '投票消灭全部狼人'}</p>
+                    <p><strong>游戏时长：</strong>${game.rounds || '?'} 个回合</p>
+                    <p><strong>关键时刻：</strong>
+                        ${allEvents.length > 0 ? `共发生了 ${allEvents.length} 个事件，其中包括` : ''}
+                        ${allEvents.filter(e => e.event_type === 'death_announcement').length} 次夜间击杀，
+                        ${allEvents.filter(e => e.event_type === 'elimination').length} 次日间投票淘汰。
+                    </p>
+                    <p><strong>胜负分析：</strong>
+                        ${game.winner === 'werewolves'
+                    ? '狼人队伍通过有效的隐蔽和投票操纵成功消灭了村民。'
+                    : '村民通过投票合作成功识别并消灭了狼人。'}
+                    </p>
+                </div>
+            </div>`
+
+            html += '</div>'
+            return html
+        }
+
         onMounted(load)
 
         onUnmounted(() => {
@@ -564,7 +747,9 @@ export default {
             closeOverview,
             getGameSummary,
             getPlayersOverview,
-            getDeathTimeline
+            getVotesOverview,
+            getDeathTimeline,
+            getGameReview
         }
     }
 }
@@ -1072,5 +1257,221 @@ export default {
 
 .death-announcement p {
     margin: 4px 0;
+}
+
+/* Voting styles */
+.votes-table {
+    margin-top: 12px;
+}
+
+.vote-round {
+    background: #f8f9fa;
+    padding: 12px;
+    border-radius: 8px;
+    margin-bottom: 12px;
+}
+
+.vote-round h4 {
+    margin-top: 0;
+    color: #007bff;
+}
+
+.vote-details {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 8px;
+}
+
+.vote-details th,
+.vote-details td {
+    padding: 8px 12px;
+    text-align: left;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.vote-details th {
+    background: #e3f2fd;
+    font-weight: bold;
+    color: #1976d2;
+}
+
+.vote-details tr:hover {
+    background: #f0f0f0;
+}
+
+/* Review styles */
+.review-content {
+    margin-top: 12px;
+}
+
+.review-section {
+    background: #f8f9fa;
+    padding: 16px;
+    border-radius: 8px;
+    margin-bottom: 16px;
+}
+
+.review-section h4 {
+    margin-top: 0;
+    color: #333;
+    border-bottom: 2px solid #007bff;
+    padding-bottom: 8px;
+}
+
+.review-section p {
+    margin: 8px 0;
+    line-height: 1.6;
+}
+
+.player-ratings {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 12px;
+    margin-top: 12px;
+}
+
+.rating-item {
+    background: white;
+    padding: 12px;
+    border-radius: 6px;
+    border-left: 4px solid #007bff;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.player-name {
+    font-weight: bold;
+    color: #333;
+}
+
+.player-role {
+    font-size: 12px;
+    color: #666;
+}
+
+.player-result {
+    font-size: 12px;
+    color: #28a745;
+}
+
+/* Vote table styles */
+.vote-round {
+    margin-bottom: 20px;
+    padding: 16px;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+.vote-round h4 {
+    margin: 0 0 12px 0;
+    color: #333;
+    font-size: 16px;
+}
+
+.vote-details {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 12px;
+    background: white;
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.vote-details thead {
+    background: #e9ecef;
+}
+
+.vote-details th,
+.vote-details td {
+    padding: 10px 12px;
+    text-align: left;
+    border-bottom: 1px solid #dee2e6;
+    font-size: 14px;
+}
+
+.vote-details tr:hover {
+    background: #f8f9fa;
+}
+
+.vote-summary {
+    background: white;
+    padding: 12px;
+    border-radius: 6px;
+    border-left: 3px solid #ffc107;
+}
+
+.vote-summary h5 {
+    margin: 0 0 8px 0;
+    color: #666;
+    font-size: 13px;
+}
+
+.vote-count {
+    padding: 6px 0;
+    color: #333;
+    font-size: 14px;
+}
+
+/* Game review styles */
+.game-info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+    margin: 12px 0;
+}
+
+.info-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 12px;
+    background: #f8f9fa;
+    border-radius: 6px;
+}
+
+.info-label {
+    font-weight: bold;
+    color: #666;
+    font-size: 12px;
+}
+
+.info-value {
+    color: #333;
+    font-size: 16px;
+}
+
+/* Role group styles */
+.role-group {
+    margin-bottom: 16px;
+    padding: 12px;
+    background: white;
+    border-radius: 6px;
+    border-left: 3px solid #007bff;
+}
+
+.role-group h5 {
+    margin: 0 0 12px 0;
+    color: #333;
+    font-size: 14px;
+}
+
+.status-icon {
+    margin-right: 4px;
+    font-size: 16px;
+}
+
+/* Evaluation section */
+.evaluation {
+    background: white;
+    padding: 16px;
+    border-radius: 6px;
+    line-height: 1.8;
+}
+
+.evaluation p {
+    margin: 10px 0;
+    color: #333;
+    font-size: 14px;
 }
 </style>

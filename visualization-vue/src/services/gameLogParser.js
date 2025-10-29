@@ -55,8 +55,20 @@ export default class GameLogParser {
         }
 
         if (playerString) {
-            // Split by comma and clean up
-            const playerNames = playerString.split(',').map(p => p.trim()).filter(p => p && !p.includes('\n') && p.length > 0 && p.match(/^[A-Za-z]+$/))
+            // Split by comma and clean up - handle both single line and multi-line formats
+            const playerNames = playerString
+                .split(',')
+                .map(p => p.trim())
+                .filter(p => {
+                    // Only filter out empty strings and strings with newlines at the start
+                    return p && p.length > 0 && !p.startsWith('\n')
+                })
+                .map(p => {
+                    // Remove any remaining newlines and whitespace
+                    return p.split('\n')[0].trim()
+                })
+                .filter(p => p && p.match(/^[A-Za-z]+$/))
+            
             this.game_info.player_names = playerNames
             playerNames.forEach(name => {
                 this.players[name] = {
