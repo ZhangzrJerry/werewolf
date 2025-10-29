@@ -7,7 +7,7 @@ import path from 'path'
 import fs from 'fs'
 
 export default defineConfig({
-    base: '/werewolf/',
+    base: process.env.VITE_BASE_URL || '/werewolf/',
     plugins: [
         vue(),
         AutoImport({

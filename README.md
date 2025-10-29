@@ -1,7 +1,7 @@
 <div align="center">
 <p align="center">
     <img src="visualization/static/teaser-modified.png" alt="teaser" width="90" />
-    <img src="visualization/static/public/logo.svg" alt="logo" width="90" />
+    <img src="visualization-vue/public/logo.svg" alt="logo" width="90" />
 </p>
 
 # Werewolf Game · 会学习的狼人杀智能体
