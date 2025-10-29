@@ -1,20 +1,20 @@
 <template>
     <div class="app-shell">
         <header class="app-header">
-            <h1>狼人杀 - 日志查看</h1>
+            <h1>🐺 狼人杀智能体博弈 - 游戏回放</h1>
         </header>
         <main>
-            <TrainingViewer />
+            <GameViewer />
         </main>
     </div>
 </template>
 
 <script>
-import TrainingViewer from './components/TrainingViewer.vue'
+import GameViewer from './components/GameViewer.vue'
 
 export default {
     name: 'App',
-    components: { TrainingViewer }
+    components: { GameViewer }
 }
 </script>
 
@@ -31,5 +31,6 @@ body {
 }
 
 .app-shell main {
-    padding: 16px }
+    padding: 16px
+}
 </style>
