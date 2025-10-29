@@ -9,21 +9,20 @@
                 </div>
             </div>
         </header>
+
         <div class="container">
             <main>
-                <GameViewer />
+                <router-view />
             </main>
         </div>
     </div>
 </template>
 
 <script>
-import GameViewer from './components/GameViewer.vue'
 import './assets/style.css'
 
 export default {
-    name: 'App',
-    components: { GameViewer }
+    name: 'App'
 }
 </script>
 
@@ -31,7 +30,7 @@ export default {
 header {
     background-color: transparent;
     color: white;
-    padding: 20px 0;
+    padding: 16px 0;
 }
 
 .header-top {
@@ -45,57 +44,22 @@ header {
 
 h1 {
     margin: 0;
-    font-size: 28px;
+    font-size: 24px;
     color: white;
-}
-
-.header-links {
-    display: flex;
-    gap: 16px;
-    align-items: center;
 }
 
 .header-links a {
     color: white;
     text-decoration: none;
-    padding: 8px 16px;
+    padding: 6px 12px;
     border-radius: 4px;
-    transition: all 0.3s ease;
-    font-size: 14px;
-    font-weight: 500;
-    border: 1px solid white;
-}
-
-.header-links a:hover {
-    background-color: rgba(255, 255, 255, 0.1);
-    transform: translateY(-2px);
-}
-
-.doc-link {
-    border-color: white;
-    color: white;
-}
-
-.doc-link:hover {
-    background-color: rgba(255, 255, 255, 0.2);
-}
-
-.github-link {
-    border-color: white;
-    color: white;
-}
-
-.github-link:hover {
-    background-color: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    margin-left: 8px;
 }
 
 .container {
     max-width: 1400px;
     margin: 0 auto;
     padding: 20px;
-}
-
-main {
-    min-height: calc(100vh - 120px);
 }
 </style>

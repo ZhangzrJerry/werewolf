@@ -562,7 +562,7 @@ export default {
 
 <style scoped>
 .werewolf-viewer {
-    max-width: 1200px;
+    width: 100%;
     margin: 0 auto;
     padding: 20px;
 }
