@@ -562,7 +562,7 @@ export default {
 
                 // If we have a folder name, try fetching overall and per-player reviews
                 if (reviewFolder.value) {
-                    const baseUrl = `/.training/reviews/${reviewFolder.value}`
+                    const baseUrl = `${import.meta.env.BASE_URL}.training/reviews/${reviewFolder.value}`
                     try {
                         const r = await fetch(`${baseUrl}/overall.txt`)
                         if (r.ok) overallReview.value = await r.text()
@@ -699,7 +699,7 @@ export default {
                     }
 
                     if (reviewFolder.value) {
-                        html += `<div class="review-section"><small>Reviews folder: /.training/reviews/${escapeHtml(reviewFolder.value)}</small></div>`
+                        html += `<div class="review-section"><small>Reviews folder: ${import.meta.env.BASE_URL}.training/reviews/${escapeHtml(reviewFolder.value)}</small></div>`
                     }
 
                     html += '</div>'

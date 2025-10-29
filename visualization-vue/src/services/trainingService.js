@@ -1,4 +1,4 @@
-const BASE = `${import.meta.env.BASE_URL || '/werewolf/'}.training`
+const BASE = `${import.meta.env.BASE_URL}.training`
 
 async function fetchJson(path) {
     const res = await fetch(path)
