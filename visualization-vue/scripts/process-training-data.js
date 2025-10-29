@@ -42,12 +42,12 @@ function main() {
     }
 
     if (!copied) {
-        console.warn('⚠️  No .training source found (searched repo root and visualization assets). Skipping.')
+        console.warn('[WARN] No .training source found (searched repo root and visualization assets). Skipping.')
         process.exitCode = 0
         return
     }
 
-    console.log('✅ .training copied to public/.training')
+    console.log('[SUCCESS] .training copied to public/.training')
 }
 
 main()
