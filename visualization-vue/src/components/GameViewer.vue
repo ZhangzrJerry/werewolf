@@ -95,27 +95,16 @@
                     </div>
                     <div class="tab-content">
                         <div v-if="currentOverviewTab === 'summary'" class="overview-section">
-                            <h3>🏆 游戏结果</h3>
                             <div class="result-summary" v-html="getGameSummary()"></div>
                         </div>
-                        <div v-if="currentOverviewTab === 'players'" class="overview-section">
-                            <h3>👥 玩家角色与结局</h3>
-                            <div class="players-overview" v-html="getPlayersOverview()"></div>
-                        </div>
+                        <!-- players tab removed per request -->
                         <div v-if="currentOverviewTab === 'votes'" class="overview-section">
-                            <h3>🗳️ 投票记录</h3>
                             <div class="votes-overview" v-html="getVotesOverview()"></div>
                         </div>
-                        <div v-if="currentOverviewTab === 'timeline'" class="overview-section">
-                            <h3>💀 死亡时间线</h3>
-                            <div class="timeline" v-html="getDeathTimeline()"></div>
-                        </div>
                         <div v-if="currentOverviewTab === 'review'" class="overview-section">
-                            <h3>⭐ 游戏评价</h3>
                             <div class="review-overview" v-html="getGameReview()"></div>
                         </div>
                         <div v-if="currentOverviewTab === 'rawlog'" class="overview-section">
-                            <h3>📄 完整游戏日志</h3>
                             <pre class="raw-log">{{ rawLog || '正在加载...' }}</pre>
                         </div>
                     </div>
@@ -127,7 +116,7 @@
 
 <script>
 import { ref, onMounted, onUnmounted, computed } from 'vue'
-import { getProgress, getRawLog, getParsedForGame } from '../services/trainingService'
+import { getProgress, getRawLog, getParsedForGame, findReviewsForGame } from '../services/trainingService'
 import GameLogParser from '../services/gameLogParser'
 
 export default {
@@ -144,6 +133,9 @@ export default {
         const showOverviewModal = ref(false)
         const currentOverviewTab = ref('summary')
         const rawLog = ref('')
+        const reviewFolder = ref(null)
+        const overallReview = ref('')
+        const perPlayerReviews = ref({})
 
         // Role translations
         const roleTranslations = {
@@ -186,9 +178,7 @@ export default {
 
         const overviewTabs = [
             { id: 'summary', label: '📋 游戏总结' },
-            { id: 'players', label: '👥 玩家详情' },
             { id: 'votes', label: '🗳️ 投票记录' },
-            { id: 'timeline', label: '⏰ 死亡时间线' },
             { id: 'review', label: '⭐ 游戏评价' },
             { id: 'rawlog', label: '📄 原始日志' }
         ]
@@ -236,6 +226,12 @@ export default {
                 console.log('Game loaded:', parsedData)
                 console.log('Players:', parsedData.players)
                 console.log('Events:', parsedData.events)
+                // attempt to load reviews referenced in the raw log
+                try {
+                    await loadReviews(filename)
+                } catch (e) {
+                    console.warn('Failed to load reviews for', filename, e)
+                }
             } else {
                 alert('无法加载游戏日志')
             }
@@ -295,6 +291,20 @@ export default {
                 return gameParser.value.getPlayerStateAtEvent(playerName, currentEventIndex.value)
             } catch (e) {
                 console.error('Error getting player state:', e)
+                return { status: 'alive' }
+            }
+        }
+
+        function getFinalPlayerState(playerName) {
+            // Get final player state at game end
+            if (!gameParser.value) return { status: 'alive' }
+            if (!gameParser.value.getPlayerStateAtEvent) return { status: 'alive' }
+
+            try {
+                const totalEvents = gameParser.value.events?.length || 0
+                return gameParser.value.getPlayerStateAtEvent(playerName, totalEvents)
+            } catch (e) {
+                console.error('Error getting final player state:', e)
                 return { status: 'alive' }
             }
         }
@@ -469,246 +479,238 @@ export default {
 
         function getGameSummary() {
             if (!currentGame.value) return '<p>没有游戏数据</p>'
-            const info = currentGame.value.game_info || {}
-            const players = currentGame.value.players || {}
+            const game = currentGame.value
+            const info = game.game_info || {}
+            const playersObj = game.players || {}
+            const players = Object.values(playersObj)
 
-            // Count players by role
-            const roleCounts = {}
-            Object.values(players).forEach(p => {
-                roleCounts[p.role] = (roleCounts[p.role] || 0) + 1
-            })
+            const escapeHtml = s => s ? String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') : ''
 
-            let html = '<div class="game-summary">'
-            html += `<p><strong>🏆 胜利方:</strong> ${info.winner === 'werewolves' ? '🐺 狼人阵营' : info.winner === 'villagers' ? '👥 村民阵营' : '未知'}</p>`
-            html += `<p><strong>⏱️ 回合数:</strong> ${info.rounds_played || '未知'}</p>`
-            html += `<p><strong>👥 总玩家数:</strong> ${Object.keys(players).length}</p>`
-            html += `<p><strong>🎮 游戏类型:</strong> ${info.game_type || '标准狼人杀'}</p>`
-
-            if (info.werewolf_team && info.werewolf_team.length > 0) {
-                html += `<p><strong>🐺 狼人阵营:</strong> ${info.werewolf_team.join(', ')}</p>`
+            // build werewolf team if info missing
+            let werewolfTeam = info.werewolf_team || []
+            if ((!werewolfTeam || werewolfTeam.length === 0) && players.length > 0) {
+                werewolfTeam = players.filter(p => p.role === 'werewolf').map(p => p.name)
             }
 
-            html += '<p><strong>⚔️ 角色分布:</strong></p><ul>'
+            // role counts
+            const roleCounts = {}
+            players.forEach(p => roleCounts[p.role] = (roleCounts[p.role] || 0) + 1)
+
+            // Flask-style result summary with cards
+            let html = '<div class="overview-section"><h3>🏆 游戏结果</h3><div class="result-summary">'
+
+            // Winner card (with Flask-style gradient)
+            const winnerText = info.winner === 'werewolves' ? '🐺 狼人阵营' : info.winner === 'villagers' ? '👥 村民阵营' : escapeHtml(info.winner || '未知')
+            const winnerClass = info.winner === 'werewolves' ? 'loser' : info.winner === 'villagers' ? 'winner' : ''
+            html += `<div class="result-card ${winnerClass}"><div class="title">胜利方</div><div class="value">${winnerText}</div></div>`
+
+            // Rounds card
+            html += `<div class="result-card"><div class="title">回合数</div><div class="value">${game.rounds || info.rounds_played || '—'}</div></div>`
+
+            // Total players card
+            html += `<div class="result-card"><div class="title">玩家总数</div><div class="value">${players.length}</div></div>`
+
+            // Werewolf count card
+            const werewolfCount = players.filter(p => p.role === 'werewolf').length
+            html += `<div class="result-card"><div class="title">狼人数量</div><div class="value">${werewolfCount}</div></div>`
+
+            html += '</div></div>'
+
+            // Stats grid (Flask-style)
+            html += '<div class="overview-section"><h3>📊 数据统计</h3><div class="stats-grid">'
+
+            // Game type stat
+            html += `<div class="stat-item"><div class="label">游戏类型</div><div class="value">${escapeHtml(info.game_type || '标准狼人杀')}</div></div>`
+
+            // Werewolf team stat
+            if (werewolfTeam && werewolfTeam.length) {
+                html += `<div class="stat-item"><div class="label">狼人阵营</div><div class="value">${werewolfTeam.map(escapeHtml).join(', ')}</div></div>`
+            }
+
+            // Role distribution stats
             Object.entries(roleCounts).forEach(([role, count]) => {
                 if (role !== 'unknown') {
-                    html += `<li>${getRoleTranslation(role)}: ${count}人</li>`
+                    html += `<div class="stat-item"><div class="label">${escapeHtml(getRoleTranslation(role))}</div><div class="value">${count}人</div></div>`
                 }
             })
-            html += '</ul></div>'
+
+            html += '</div></div>'
 
             return html
         }
 
-        function getPlayersOverview() {
-            if (!currentGame.value?.players) return '<p>没有玩家数据</p>'
-            const players = Object.values(currentGame.value.players)
+        // players overview removed — no longer used
 
-            let html = '<div class="players-overview">'
-            players.forEach(player => {
-                const finalState = getCurrentPlayerState(player.name)
-                const statusIcon = finalState?.status === 'alive' ? '✅' : '💀'
-                html += `
-                    <div class="player-overview-card">
-                        <div class="player-info">
-                            <span class="status-icon">${statusIcon}</span>
-                            <strong>${player.name}</strong> 
-                            <span class="role-badge">${getRoleTranslation(player.role)}</span>
-                        </div>
-                        <div class="player-status">${finalState?.status === 'alive' ? '存活' : '已死亡'}</div>
-                        ${player.death_round ? `<div class="death-round">第 ${player.death_round} 轮死亡</div>` : ''}
-                    </div>
-                `
-            })
-            html += '</div>'
-            return html
-        }
+        async function loadReviews(filename) {
+            overallReview.value = ''
+            perPlayerReviews.value = {}
+            reviewFolder.value = null
 
-        function getDeathTimeline() {
-            // Simple death timeline - would need more complex logic for detailed timeline
-            return '<p>死亡时间线功能开发中...</p>'
+            // Try to find the review folder path from the raw log
+            try {
+                if (rawLog.value) {
+                    const m = rawLog.value.match(/Reviews and lessons saved to:\s*(.+)/i)
+                    if (m && m[1]) {
+                        const fullPath = m[1].trim()
+                        const parts = fullPath.split(/[/\\]+/)
+                        const folderName = parts.pop()
+                        if (folderName) {
+                            reviewFolder.value = folderName
+                        }
+                    }
+                }
+
+                // If we have a folder name, try fetching overall and per-player reviews
+                if (reviewFolder.value) {
+                    const baseUrl = `/.training/reviews/${reviewFolder.value}`
+                    try {
+                        const r = await fetch(`${baseUrl}/overall.txt`)
+                        if (r.ok) overallReview.value = await r.text()
+                    } catch (e) { /* ignore */ }
+
+                    const players = currentGame.value?.players ? Object.values(currentGame.value.players).map(p => p.name) : []
+                    for (const name of players) {
+                        try {
+                            const purl = `${baseUrl}/${encodeURIComponent(name)}_review.txt`
+                            const pr = await fetch(purl)
+                            if (pr.ok) perPlayerReviews.value[name] = await pr.text()
+                        } catch (e) { /* ignore */ }
+                    }
+                    return
+                }
+
+                // fallback: try heuristic search via service
+                const found = await findReviewsForGame(filename).catch(() => [])
+                if (found && found.length > 0) {
+                    // try to pick an overall.txt or first text file
+                    for (const url of found) {
+                        try {
+                            const r = await fetch(url)
+                            if (r.ok) {
+                                const text = await r.text()
+                                // use as overall if it looks like overall
+                                overallReview.value = text
+                                break
+                            }
+                        } catch (e) { }
+                    }
+                }
+            } catch (e) {
+                console.warn('loadReviews error', e)
+            }
         }
 
         function getVotesOverview() {
-            let html = '<div class="votes-table">'
+            try {
+                const escapeHtml = s => s ? String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') : ''
 
-            // Group votes by round
-            const votesByRound = {}
-            const votes = gameParser.value?.events?.filter(e => e.event_type === 'vote') || []
+                const allEvents = gameParser.value?.events || []
+                const votes = allEvents.filter(e => e.event_type === 'vote')
 
-            if (votes.length === 0) {
-                return '<p>暂无投票记录</p>'
-            }
-
-            // Group votes by round number
-            votes.forEach(vote => {
-                const roundNum = vote.round_num
-                if (!votesByRound[roundNum]) {
-                    votesByRound[roundNum] = []
+                if (!votes || votes.length === 0) {
+                    return '<div class="overview-section"><h3>🗳️ 投票记录</h3><p style="padding: 20px;">暂无投票记录</p></div>'
                 }
-                votesByRound[roundNum].push(vote)
-            })
 
-            // Display votes organized by round
-            Object.keys(votesByRound).sort((a, b) => parseInt(a) - parseInt(b)).forEach(round => {
-                const roundVotes = votesByRound[round]
-                html += `<div class="vote-round"><h4>第 ${round} 轮投票</h4>`
-                html += '<table class="vote-details">'
-                html += '<thead><tr><th>投票者</th><th>投票给</th></tr></thead><tbody>'
+                // Group votes by round
+                const votesByRound = {}
+                votes.forEach(vote => {
+                    const round = vote.round_num
+                    if (!votesByRound[round]) votesByRound[round] = []
+                    votesByRound[round].push(vote)
+                })
 
-                // Count votes by target
-                const voteCount = {}
-                roundVotes.forEach(v => {
-                    const target = v.data.target
-                    if (!voteCount[target]) {
-                        voteCount[target] = { voters: [], count: 0 }
+                const roundNumbers = Object.keys(votesByRound).sort((a, b) => parseInt(a) - parseInt(b))
+
+                // Flask-style voting history layout
+                let html = '<div class="overview-section"><h3>🗳️ 投票记录</h3><div class="voting-history">'
+
+                roundNumbers.forEach(round => {
+                    const roundVotes = votesByRound[round]
+
+                    // Flask-style voting round with header and vote list
+                    html += `<div class="voting-round"><div class="voting-round-header">第 ${escapeHtml(round)} 轮投票</div>`
+                    html += '<div class="votes-list">'
+
+                    // List each vote (Flask-style voter → target format)
+                    roundVotes.forEach(v => {
+                        const voter = escapeHtml(v.data?.voter || '?')
+                        const target = escapeHtml(v.data?.target || '?')
+                        html += `<div class="vote-item"><span class="voter">${voter}</span><span class="vote-arrow">→</span><span class="target">${target}</span></div>`
+                    })
+
+                    html += '</div>'  // end votes-list
+
+                    // Vote count summary (Flask-style)
+                    const voteCount = {}
+                    roundVotes.forEach(v => {
+                        const target = v.data?.target
+                        if (target) voteCount[target] = (voteCount[target] || 0) + 1
+                    })
+
+                    const sorted = Object.entries(voteCount).sort((a, b) => b[1] - a[1])
+                    if (sorted.length > 0) {
+                        html += '<div style="padding: 10px 20px; background: #f0f0f0; border-top: 1px solid #ddd; font-size: 0.9em; color: #666;"><strong>投票统计:</strong> '
+                        html += sorted.map(([target, count]) => {
+                            const emoji = count === Math.max(...sorted.map(s => s[1])) ? '⭐' : ''
+                            return `${emoji} ${escapeHtml(target)}: <strong>${count}</strong>票`
+                        }).join(' | ')
+                        html += '</div>'
                     }
-                    voteCount[target].voters.push(v.data.voter)
-                    voteCount[target].count++
+
+                    // Show elimination result if exists
+                    const eliminationEvent = allEvents.find(ev => ev.event_type === 'elimination' && String(ev.round_num) === String(round))
+                    if (eliminationEvent && eliminationEvent.data && eliminationEvent.data.player) {
+                        const elimRole = eliminationEvent.data.role ? ` (${escapeHtml(getRoleTranslation(eliminationEvent.data.role))})` : ''
+                        html += `<div style="padding: 10px 20px; background: #ffe5e5; border-top: 1px solid #ffcccc; color: #d32f2f; font-weight: bold;">⚖️ 淘汰: ${escapeHtml(eliminationEvent.data.player)}${elimRole}</div>`
+                    }
+
+                    html += '</div>'  // end voting-round
                 })
 
-                // Show individual votes
-                roundVotes.forEach(v => {
-                    html += `<tr><td>${v.data.voter}</td><td>${v.data.target}</td></tr>`
-                })
-
-                html += '</tbody></table>'
-
-                // Show vote summary
-                html += '<div class="vote-summary">'
-                html += '<h5>投票统计:</h5>'
-                Object.entries(voteCount).forEach(([target, data]) => {
-                    const eliminated = roundVotes.some(e =>
-                        e.event_type === 'elimination' || (gameParser.value?.events?.find(ev =>
-                            ev.round_num === round &&
-                            ev.event_type === 'elimination' &&
-                            ev.data?.target === target
-                        ))
-                    )
-                    const badge = gameParser.value?.events?.find(ev =>
-                        ev.round_num === round &&
-                        ev.event_type === 'elimination'
-                    )?.data?.target === target ? ' ✓ 淘汰' : ''
-                    html += `<div class="vote-count">${target}: ${data.count}票 (${data.voters.join(', ')})${badge}</div>`
-                })
-                html += '</div>'
-                html += '</div>'
-            })
-
-            html += '</div>'
-            return html
+                html += '</div></div>'  // end voting-history & overview-section
+                return html
+            } catch (error) {
+                console.error('Error in getVotesOverview:', error)
+                return '<p style="color: red;">获取投票记录出错</p>'
+            }
         }
 
         function getGameReview() {
-            let html = '<div class="review-content">'
+            try {
+                const escapeHtml = (s) => s ? String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') : ''
 
-            const game = currentGame.value
-            if (!game) return '<p>暂无游戏数据</p>'
+                if (overallReview.value || Object.keys(perPlayerReviews.value || {}).length > 0) {
+                    let html = '<div class="review-content">'
 
-            // Calculate game stats
-            const allEvents = gameParser.value?.events || []
-            const players = Object.values(game.players || {})
-            const deathCount = players.filter(p => {
-                const state = getCurrentPlayerState(p.name)
-                return state?.status === 'dead'
-            }).length
-            const aliveCount = players.length - deathCount
+                    if (overallReview.value) {
+                        const out = escapeHtml(overallReview.value).replace(/\n/g, '<br>')
+                        html += `<div class="review-section"><h4>📋 Overall Review</h4><div class="review-text">${out}</div></div>`
+                    }
 
-            // Game basic info
-            html += `<div class="review-section">
-                <h4>📊 游戏基本信息</h4>
-                <div class="game-info-grid">
-                    <div class="info-item">
-                        <span class="info-label">胜利方:</span>
-                        <span class="info-value">${game.winner === 'werewolves' ? '🐺 狼人阵营' : game.winner === 'villagers' ? '👥 村民阵营' : game.winner}</span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label">游戏回合:</span>
-                        <span class="info-value">${game.rounds || '?'} 回合</span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label">参与玩家:</span>
-                        <span class="info-value">${players.length} 人</span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label">存活/死亡:</span>
-                        <span class="info-value">${aliveCount}/${deathCount}</span>
-                    </div>
-                </div>
-            </div>`
+                    const players = Object.keys(perPlayerReviews.value || {})
+                    if (players.length > 0) {
+                        html += '<div class="review-section"><h4>🎯 按玩家评价</h4>'
+                        players.forEach(name => {
+                            const txt = perPlayerReviews.value[name] || ''
+                            const pOut = escapeHtml(txt).replace(/\n/g, '<br>')
+                            html += `<div class="review-item"><h5>${escapeHtml(name)}</h5><div class="review-text">${pOut}</div></div>`
+                        })
+                        html += '</div>'
+                    }
 
-            // Player performance
-            html += `<div class="review-section">
-                <h4>🎯 玩家表现</h4>
-                <div class="player-ratings">`
-
-            // Categorize players by role - create dynamic categories
-            const roleCategories = {}
-
-            players.forEach(player => {
-                const role = player.role.toLowerCase()
-                if (!roleCategories[role]) {
-                    roleCategories[role] = []
-                }
-                const state = getCurrentPlayerState(player.name)
-                roleCategories[role].push({ player, state })
-            })
-
-            // Define role order for display
-            const roleOrder = ['werewolf', 'seer', 'witch', 'guardian', 'hunter', 'villager']
-
-            // Display by role category in preferred order, then any remaining roles
-            const orderedRoles = roleOrder.filter(r => roleCategories[r]).concat(
-                Object.keys(roleCategories).filter(r => !roleOrder.includes(r))
-            )
-
-            orderedRoles.forEach(role => {
-                const playersInRole = roleCategories[role]
-                if (playersInRole && playersInRole.length > 0) {
-                    html += `<div class="role-group">
-                        <h5>${getRoleTranslation(role)}:</h5>`
-
-                    playersInRole.forEach(({ player, state }) => {
-                        const statusIcon = state?.status === 'alive' ? '✅' : '💀'
-                        const statusText = state?.status === 'alive' ? '存活' : `第${player.death_round || '?'}轮死亡`
-                        html += `<div class="rating-item">
-                            <span class="status-icon">${statusIcon}</span>
-                            <span class="player-name">${player.name}</span>
-                            <span class="player-result">${statusText}</span>
-                        </div>`
-                    })
+                    if (reviewFolder.value) {
+                        html += `<div class="review-section"><small>Reviews folder: /.training/reviews/${escapeHtml(reviewFolder.value)}</small></div>`
+                    }
 
                     html += '</div>'
+                    return html
                 }
-            })
 
-            html += `</div></div>`
-
-            // Game evaluation
-            const werewolfPlayers = players.filter(p => p.role.toLowerCase() === 'werewolf')
-            const villagerPlayers = players.filter(p => p.role.toLowerCase() !== 'werewolf')
-            const winningTeam = game.winner === 'werewolves' ? werewolfPlayers : villagerPlayers
-
-            html += `<div class="review-section">
-                <h4>💭 比赛评价</h4>
-                <div class="evaluation">
-                    <p><strong>胜利阵营：</strong>${game.winner === 'werewolves' ? '🐺 狼人' : '👥 村民'}</p>
-                    <p><strong>获胜方式：</strong>${game.winner === 'werewolves' ? '消灭全部村民' : '投票消灭全部狼人'}</p>
-                    <p><strong>游戏时长：</strong>${game.rounds || '?'} 个回合</p>
-                    <p><strong>关键时刻：</strong>
-                        ${allEvents.length > 0 ? `共发生了 ${allEvents.length} 个事件，其中包括` : ''}
-                        ${allEvents.filter(e => e.event_type === 'death_announcement').length} 次夜间击杀，
-                        ${allEvents.filter(e => e.event_type === 'elimination').length} 次日间投票淘汰。
-                    </p>
-                    <p><strong>胜负分析：</strong>
-                        ${game.winner === 'werewolves'
-                    ? '狼人队伍通过有效的隐蔽和投票操纵成功消灭了村民。'
-                    : '村民通过投票合作成功识别并消灭了狼人。'}
-                    </p>
-                </div>
-            </div>`
-
-            html += '</div>'
-            return html
+                return '<p style="padding: 20px;">暂无评价文件 (未在日志中找到 review 目录)</p>'
+            } catch (error) {
+                console.error('Error in getGameReview:', error)
+                return '<p style="color: red;">获取游戏评价出错</p>'
+            }
         }
 
         onMounted(load)
@@ -746,9 +748,8 @@ export default {
             showOverview,
             closeOverview,
             getGameSummary,
-            getPlayersOverview,
+            // getPlayersOverview removed
             getVotesOverview,
-            getDeathTimeline,
             getGameReview
         }
     }
@@ -1064,7 +1065,9 @@ export default {
     border-radius: 8px;
     max-width: 90vw;
     max-height: 90vh;
-    overflow: auto;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
 }
 
 .modal-header {
@@ -1073,16 +1076,23 @@ export default {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    flex-shrink: 0;
 }
 
-.close {
-    font-size: 24px;
-    cursor: pointer;
+.modal-body {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    flex: 1;
+    /* allow flex children to shrink properly in some browsers */
+    min-height: 0;
 }
 
 .overview-tabs {
     display: flex;
     border-bottom: 1px solid #dee2e6;
+    flex-shrink: 0;
+    background: white;
 }
 
 .tab-button {
@@ -1090,6 +1100,7 @@ export default {
     border: none;
     background: none;
     cursor: pointer;
+    white-space: nowrap;
 }
 
 .tab-button.active {
@@ -1097,14 +1108,27 @@ export default {
     color: white;
 }
 
+/* .close {
+    font-size: 24px;
+    cursor: pointer;
+    color: #666;
+}*/
+
+.close:hover {
+    color: #313131;
+}
+
 .tab-content {
     padding: 20px;
+    overflow-y: auto;
+    flex: 1;
 }
 
 .raw-log {
     max-height: 400px;
     overflow: auto;
     background: #f8f9fa;
+    color: #333;
     padding: 16px;
     font-size: 12px;
 }
@@ -1164,6 +1188,47 @@ export default {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
     gap: 12px;
+}
+
+/* Summary grid and roster */
+.game-summary-grid {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 16px;
+}
+
+.summary-left {
+    min-width: 0;
+}
+
+.summary-right .roster {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.player-badge {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px;
+    border-radius: 6px;
+    background: #fff;
+    border: 1px solid #eee;
+}
+
+.player-badge.dead {
+    opacity: 0.6;
+}
+
+.player-badge .role {
+    color: #666;
+    margin-left: 8px;
+    font-size: 13px
+}
+
+.player-badge .status {
+    margin-left: 12px
 }
 
 .player-overview-card {
@@ -1295,6 +1360,25 @@ export default {
     color: #1976d2;
 }
 
+.vote-grid {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+}
+
+.vote-summary {
+    min-width: 140px;
+    background: #fff;
+    padding: 8px;
+    border-radius: 6px;
+    border: 1px solid #eee;
+}
+
+.vote-count {
+    margin: 4px 0;
+    font-weight: 600
+}
+
 .vote-details tr:hover {
     background: #f0f0f0;
 }
@@ -1325,6 +1409,17 @@ export default {
 
 .player-ratings {
     display: grid;
+
+    .review-text {
+        white-space: pre-wrap;
+        word-break: break-word;
+        overflow-wrap: anywhere;
+        font-family: system-ui, "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: #fafafa;
+        padding: 10px;
+        border-radius: 6px;
+    }
+
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
     gap: 12px;
     margin-top: 12px;
@@ -1473,5 +1568,118 @@ export default {
     margin: 10px 0;
     color: #333;
     font-size: 14px;
+}
+
+/* Result-summary (compact) */
+.result-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.result-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 20px;
+    border-radius: 10px;
+    text-align: center;
+}
+
+.result-card .title {
+    font-size: 0.9em;
+    opacity: 0.9;
+    margin-bottom: 10px;
+}
+
+.result-card .value {
+    font-size: 2em;
+    font-weight: bold;
+}
+
+.result-card.winner {
+    background: linear-gradient(135deg, #56ab2f 0%, #a8e6cf 100%);
+}
+
+.result-card.loser {
+    background: linear-gradient(135deg, #ff4b2b 0%, #ff416c 100%);
+}
+
+/* Stats Grid */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+}
+
+.stat-item {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    text-align: center;
+    border-left: 4px solid #667eea;
+}
+
+.stat-item .label {
+    color: #6c757d;
+    font-size: 0.9em;
+    margin-bottom: 5px;
+}
+
+.stat-item .value {
+    color: #495057;
+    font-size: 1.4em;
+    font-weight: bold;
+}
+
+/* Voting History (Flask-style) */
+.voting-history {
+    overflow-x: auto;
+}
+
+.voting-round {
+    margin-bottom: 25px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.voting-round-header {
+    background: #667eea;
+    color: white;
+    padding: 10px 20px;
+    font-weight: bold;
+}
+
+.votes-list {
+    padding: 15px 20px;
+}
+
+.vote-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.vote-item:last-child {
+    border-bottom: none;
+}
+
+.voter {
+    font-weight: 500;
+    color: #495057;
+}
+
+.vote-arrow {
+    color: #667eea;
+    font-weight: bold;
+    margin: 0 10px;
+}
+
+.target {
+    font-weight: 500;
+    color: #dc3545;
 }
 </style>

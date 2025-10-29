@@ -691,7 +691,7 @@ header h1 {
 
 /* Tab Content */
 .tab-content {
-    display: none;
+    /* display: none; */
     padding: 30px;
 }
 
