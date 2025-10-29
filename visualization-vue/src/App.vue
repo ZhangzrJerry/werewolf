@@ -4,8 +4,7 @@
             <div class="header-top">
                 <h1>🐺 Werewolf Game Replay Viewer</h1>
                 <div class="header-links">
-                    <a :href="`${import.meta.env.BASE_URL}doc.html`" class="doc-link" target="_blank">📖
-                        Documentation</a>
+                    <a :href="docUrl" class="doc-link" target="_blank">📖 Documentation</a>
                     <a href="https://github.com/ZhangzrJerry/werewolf" class="github-link" target="_blank">🔗 GitHub</a>
                 </div>
             </div>
@@ -23,7 +22,12 @@
 import './assets/style.css'
 
 export default {
-    name: 'App'
+    name: 'App',
+    computed: {
+        docUrl() {
+            return `${import.meta.env.BASE_URL}doc.html`
+        }
+    }
 }
 </script>
 
