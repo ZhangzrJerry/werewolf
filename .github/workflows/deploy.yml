@@ -12,6 +12,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Change directory to visualization-vue
+        run: cd visualization-vue
+
       - name: Use Node.js
         uses: actions/setup-node@v4
         with:
