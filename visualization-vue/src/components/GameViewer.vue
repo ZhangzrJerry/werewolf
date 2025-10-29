@@ -643,7 +643,7 @@ export default {
 
             // Categorize players by role - create dynamic categories
             const roleCategories = {}
-            
+
             players.forEach(player => {
                 const role = player.role.toLowerCase()
                 if (!roleCategories[role]) {
@@ -655,7 +655,7 @@ export default {
 
             // Define role order for display
             const roleOrder = ['werewolf', 'seer', 'witch', 'guardian', 'hunter', 'villager']
-            
+
             // Display by role category in preferred order, then any remaining roles
             const orderedRoles = roleOrder.filter(r => roleCategories[r]).concat(
                 Object.keys(roleCategories).filter(r => !roleOrder.includes(r))

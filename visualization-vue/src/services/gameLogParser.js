@@ -68,7 +68,7 @@ export default class GameLogParser {
                     return p.split('\n')[0].trim()
                 })
                 .filter(p => p && p.match(/^[A-Za-z]+$/))
-            
+
             this.game_info.player_names = playerNames
             playerNames.forEach(name => {
                 this.players[name] = {
