@@ -102,9 +102,17 @@
                             <h3>👥 玩家角色与结局</h3>
                             <div class="players-overview" v-html="getPlayersOverview()"></div>
                         </div>
+                        <div v-if="currentOverviewTab === 'votes'" class="overview-section">
+                            <h3>🗳️ 投票记录</h3>
+                            <div class="votes-overview" v-html="getVotesOverview()"></div>
+                        </div>
                         <div v-if="currentOverviewTab === 'timeline'" class="overview-section">
                             <h3>💀 死亡时间线</h3>
                             <div class="timeline" v-html="getDeathTimeline()"></div>
+                        </div>
+                        <div v-if="currentOverviewTab === 'review'" class="overview-section">
+                            <h3>⭐ 游戏评价</h3>
+                            <div class="review-overview" v-html="getGameReview()"></div>
                         </div>
                         <div v-if="currentOverviewTab === 'rawlog'" class="overview-section">
                             <h3>📄 完整游戏日志</h3>
@@ -179,7 +187,9 @@ export default {
         const overviewTabs = [
             { id: 'summary', label: '📋 游戏总结' },
             { id: 'players', label: '👥 玩家详情' },
+            { id: 'votes', label: '🗳️ 投票记录' },
             { id: 'timeline', label: '⏰ 死亡时间线' },
+            { id: 'review', label: '⭐ 游戏评价' },
             { id: 'rawlog', label: '📄 原始日志' }
         ]
 

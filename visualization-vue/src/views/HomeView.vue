@@ -33,7 +33,8 @@ export default {
 }
 
 .learning-column {
-    min-height: 50vh;
+    min-height: auto;
+    height: auto;
 }
 
 /* Responsive: stack on small screens */
