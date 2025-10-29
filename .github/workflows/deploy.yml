@@ -1,9 +1,20 @@
-name: Build and Deploy (GitHub Pages)
+name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: [ master ]
-  workflow_dispatch: {}
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:  # 允许手动触发
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
 
 jobs:
   build:
@@ -11,19 +22,26 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # 获取所有历史用于更好的 git info
 
-      - name: Use Node.js
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: visualization-vue/package-lock.json
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
 
       - name: Install dependencies
         working-directory: visualization-vue
         run: npm ci
 
-      - name: Build
+      - name: Build project
         working-directory: visualization-vue
-        run: npm run build --if-present
+        run: npm run build
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
@@ -33,9 +51,9 @@ jobs:
   deploy:
     environment:
       name: github-pages
-    needs: build
+      url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
-    name: Deploy
+    needs: build
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
