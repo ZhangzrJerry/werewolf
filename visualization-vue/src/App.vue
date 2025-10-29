@@ -31,6 +31,5 @@ body {
 }
 
 .app-shell main {
-    padding: 16px
-}
+    padding: 16px }
 </style>
