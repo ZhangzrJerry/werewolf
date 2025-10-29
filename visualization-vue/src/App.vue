@@ -25,7 +25,7 @@ export default {
     name: 'App',
     computed: {
         docUrl() {
-            return `${import.meta.env.BASE_URL}doc.html`
+            return `${import.meta.env.BASE_URL}doc.pdf`
         }
     }
 }

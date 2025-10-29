@@ -2,7 +2,7 @@
 export async function getLearningChainData(role) {
     try {
         // First, get the list of session directories
-        const sessionsResponse = await fetch(`${import.meta.env.BASE_URL}.training/sessions.json`)
+        const sessionsResponse = await fetch(`${import.meta.env.BASE_URL || '/werewolf/'}sessions.json`)
         if (!sessionsResponse.ok) {
             console.warn('Could not fetch sessions.json, trying direct access')
             return getEmptyData()
@@ -20,7 +20,7 @@ export async function getLearningChainData(role) {
             try {
                 // Try to get full_analysis.json
                 const analysisResponse = await fetch(
-                    `${import.meta.env.BASE_URL}.training/reviews/${sessionId}/full_analysis.json`
+                    `${import.meta.env.BASE_URL || '/werewolf/'}reviews/${sessionId}/full_analysis.json`
                 )
 
                 if (analysisResponse.ok) {
