@@ -28,7 +28,6 @@ jobs:
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
-          github_token: ${{ secrets.GH_PAGES_TOKEN }}
           publish_dir: visualization-vue/dist
           publish_branch: gh-pages
           keep_files: false
