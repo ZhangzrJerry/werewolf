@@ -4,7 +4,8 @@
             <div class="header-top">
                 <h1>🐺 Werewolf Game Replay Viewer</h1>
                 <div class="header-links">
-                    <a href="/doc.html" class="doc-link" target="_blank">📖 Documentation</a>
+                    <a :href="`${import.meta.env.BASE_URL}doc.html`" class="doc-link" target="_blank">📖
+                        Documentation</a>
                     <a href="https://github.com/ZhangzrJerry/werewolf" class="github-link" target="_blank">🔗 GitHub</a>
                 </div>
             </div>
